@@ -5,6 +5,7 @@
 Keep each capability easy to find by responsibility:
 
 - `predict-vehicle-cd`: fast geometry-similarity Cd prediction from vehicle meshes.
+- `cad-aero-skin-mesher`: target-driven exterior aero-skin mesh audit and visual QA.
 - `mesh-repair`: automatic watertight surface mesh repair and diagnostics.
 - `cad-tessellation`: CAD import and tessellation embedding.
 
@@ -28,4 +29,3 @@ Keep each capability easy to find by responsibility:
 - Use clear names such as `predict-vehicle-cd`, `mesh-repair`, `cad-tessellation`, `assets`, `references`, and `scripts`.
 - Avoid wrapper layers that only rename or forward calls.
 - Document assumptions around units, axes, mesh validity, and output quality.
-

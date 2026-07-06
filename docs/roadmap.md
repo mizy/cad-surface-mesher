@@ -8,6 +8,7 @@
 
 ## Mesh Repair
 
+- Use `cad-aero-skin-mesher` reports as the front door for deciding what to repair.
 - Detect open boundaries, non-manifold edges, duplicated vertices, zero-area faces, self intersections, inverted normals, and disconnected shells.
 - Produce a repair plan before mutating geometry.
 - Repair common surface issues with measurable before/after diagnostics.
@@ -20,4 +21,3 @@
 - Tessellate with explicit chord tolerance, angular tolerance, min/max edge length, and unit handling.
 - Preserve body/face names and source identifiers when available.
 - Emit mesh artifacts that downstream repair and Cd prediction can consume.
-
