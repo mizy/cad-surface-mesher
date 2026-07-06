@@ -27,7 +27,7 @@ def read_surface(path: Path) -> pv.PolyData:
         mesh = mesh.combine()
     if not isinstance(mesh, pv.PolyData):
         mesh = mesh.extract_surface()
-    surface = mesh.extract_surface().triangulate().clean()
+    surface = mesh.extract_surface(algorithm="dataset_surface").triangulate().clean()
     if surface.n_points == 0 or surface.n_cells == 0:
         raise ValueError(f"Empty mesh after surface extraction: {path}")
     return surface
