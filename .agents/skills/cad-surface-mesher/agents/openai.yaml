@@ -1,0 +1,4 @@
+interface:
+  display_name: "CAD Surface Mesher"
+  short_description: "Audit and prepare target-specific CAD surface meshes."
+  default_prompt: "Use $cad-surface-mesher to audit a CAD or vehicle mesh, generate target-driven visual checks, and report watertight surface mesh quality."

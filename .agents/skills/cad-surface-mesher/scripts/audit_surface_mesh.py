@@ -374,7 +374,7 @@ def audit(path: Path, output_dir: Path, target: str, width: int, height: int) ->
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audit an exterior aero surface mesh and generate target-driven visual checks.")
+    parser = argparse.ArgumentParser(description="Audit a CAD-derived surface mesh and generate target-driven visual checks.")
     parser.add_argument("mesh", help="CAD-derived or vehicle surface mesh path readable by PyVista.")
     parser.add_argument("--output-dir", required=True, help="Output directory for mesh, metrics, and visual checks.")
     parser.add_argument("--target", default="external-aero-cfd-skin")
@@ -389,4 +389,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

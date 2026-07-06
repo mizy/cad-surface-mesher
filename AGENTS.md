@@ -5,7 +5,7 @@
 Keep each capability easy to find by responsibility:
 
 - `predict-vehicle-cd`: fast geometry-similarity Cd prediction from vehicle meshes.
-- `cad-aero-skin-mesher`: target-driven exterior aero-skin mesh audit and visual QA.
+- `cad-surface-mesher`: target-driven CAD surface mesh audit and visual QA.
 - `mesh-repair`: automatic watertight surface mesh repair and diagnostics.
 - `cad-tessellation`: CAD import and tessellation embedding.
 

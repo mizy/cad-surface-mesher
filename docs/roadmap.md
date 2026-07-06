@@ -8,7 +8,7 @@
 
 ## Mesh Repair
 
-- Use `cad-aero-skin-mesher` reports as the front door for deciding what to repair.
+- Use `cad-surface-mesher` reports as the front door for deciding what to repair.
 - Detect open boundaries, non-manifold edges, duplicated vertices, zero-area faces, self intersections, inverted normals, and disconnected shells.
 - Produce a repair plan before mutating geometry.
 - Repair common surface issues with measurable before/after diagnostics.

@@ -1,5 +1,0 @@
-interface:
-  display_name: "CAD Aero Skin Mesher"
-  short_description: "Audit and prepare exterior aero surface meshes."
-  default_prompt: "Use $cad-aero-skin-mesher to audit a CAD or vehicle mesh, generate target-driven visual checks, and report watertight surface mesh quality."
-

@@ -1,11 +1,11 @@
 ---
-name: cad-aero-skin-mesher
-description: Build and validate exterior aerodynamic surface meshes from CAD or vehicle mesh inputs. Use when Codex needs to tessellate CAD, remove interior vehicle parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal panel gaps, handle grille/opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce an aero-skin mesh quality report for CFD/CAE preprocessing.
+name: cad-surface-mesher
+description: Build and validate target-specific CAD surface meshes from CAD or vehicle mesh inputs. Use when Codex needs to tessellate CAD, remove interior vehicle parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal panel gaps, handle grille/opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce a surface mesh quality report for CFD/CAE preprocessing.
 ---
 
-# CAD Aero Skin Mesher
+# CAD Surface Mesher
 
-Create an exterior aerodynamic skin, not a faithful full assembly mesh. The target is a CFD/CAE-ready surface mesh with explicit visibility, visual, and topology evidence.
+Create a target-specific CAD surface mesh, not a faithful full assembly mesh. The default target is an exterior aerodynamic skin for CFD/CAE preprocessing with explicit visibility, visual, and topology evidence.
 
 ## Core Rule
 
@@ -130,7 +130,7 @@ A final engineering pass requires all required metrics to be present. Missing me
 Use `scripts/audit_surface_mesh.py` for the current deterministic audit and screenshot generation:
 
 ```bash
-python scripts/audit_surface_mesh.py /path/to/car.vtp --output-dir /tmp/aero-skin-audit
+python scripts/audit_surface_mesh.py /path/to/car.vtp --output-dir /tmp/cad-surface-audit
 ```
 
 The script writes:
