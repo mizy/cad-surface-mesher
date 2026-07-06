@@ -77,6 +77,7 @@ def diagnostics_section(report: dict[str, Any]) -> str:
         "parameters",
         "limitations",
         "group_filter",
+        "workflow_decision",
         "view_reports",
         "size_field",
         "refinement_iterations",

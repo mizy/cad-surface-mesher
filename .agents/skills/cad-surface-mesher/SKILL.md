@@ -147,6 +147,17 @@ When `--group-source-gltf` is supplied, the script first removes names matching 
 
 Treat `watertight_topology_pass` as a narrow topology result only. Do not call the mesh engineering-ready until component count, volume reliability, self-intersection checks, visual opening policy, and bbox/silhouette drift all pass.
 
+When both watertight repair and adaptive refinement diagnostics are run, produce one primary workflow report instead of handing users separate stage reports:
+
+```bash
+python mesh-repair/scripts/workflow_report.py \
+  --two-stage-report outputs/assembly-two-stage/two_stage_report.json \
+  --adaptive-report outputs/assembly-adaptive/adaptive_refinement_report.json \
+  --output-dir outputs/assembly-workflow-report
+```
+
+The workflow report must clearly state whether adaptive refinement was consumed by the final watertight output or was only a diagnostic branch.
+
 ## Group Visibility Workflow
 
 Prefer group-level decisions before body-level or face-level work. A human CAD cleanup usually starts by hiding named assembly groups and checking whether the exterior changed; follow that pattern.
@@ -218,6 +229,8 @@ A final engineering pass requires all required metrics to be present. Missing me
 ## Required Final Report
 
 Every completed meshing or repair run must write an HTML report alongside mesh outputs, with a JSON report as the machine-readable companion. The report must be detailed enough to audit how geometry became a watertight or refined mesh.
+
+For a multi-step run, the primary user-facing artifact is one single-file HTML workflow report. Stage-specific HTML/JSON reports may exist as intermediate debug artifacts, but do not present them as separate final reports unless the user asks for stage details.
 
 Required sections:
 

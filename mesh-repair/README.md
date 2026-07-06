@@ -80,6 +80,19 @@ python mesh-repair/scripts/adaptive_depth_refine.py \
 
 This writes `refinement_field.vtp`, `adaptive_refined_source.vtp`, per-view critical-pixel PNGs, and `adaptive_refinement_report.json`. The script refines source triangles conformingly; it does not coarsen already-dense source areas and does not seal the mesh by itself.
 
+## Workflow Report
+
+When a run includes both watertight remeshing and adaptive refinement diagnostics, publish one primary workflow report:
+
+```bash
+python mesh-repair/scripts/workflow_report.py \
+  --two-stage-report outputs/vehicle-two-stage/two_stage_report.json \
+  --adaptive-report outputs/vehicle-adaptive-depth-refine/adaptive_refinement_report.json \
+  --output-dir outputs/vehicle-workflow-report
+```
+
+The workflow report is a single-file HTML report with embedded vtk.js, embedded before/after preview mesh data, embedded diagnostic images, and a JSON companion. It records whether adaptive refinement was used by the final watertight output or only run as a diagnostic branch.
+
 ## Report Contract
 
 Repair outputs must include an HTML report and a machine-readable JSON report with:
@@ -94,5 +107,5 @@ The current prototypes report implicit voxel closure separately from per-gap cla
 
 Current report files:
 
-- `two_stage_report.html` plus `two_stage_report.json`
-- `adaptive_refinement_report.html` plus `adaptive_refinement_report.json`
+- `workflow_report.html` plus `workflow_report.json` as the primary user-facing report
+- `two_stage_report.html/json` and `adaptive_refinement_report.html/json` as stage debug artifacts
