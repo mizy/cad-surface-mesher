@@ -127,6 +127,14 @@ A final engineering pass requires all required metrics to be present. Missing me
 
 ## Bundled Tool
 
+From the repository root, use `cad-tessellation/scripts/cad_tessellate.py` first when the input is STEP, IGES, or BREP CAD and a triangle-only surface mesh is needed:
+
+```bash
+python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step --output-dir /tmp/cad-tessellation
+```
+
+The tessellator writes `surface_mesh.vtp` with `gmsh_surface_tag`, `gmsh_parent_volume_tag`, and `gmsh_element_tag` cell arrays plus `tessellation_report.json`. Treat those tags as Gmsh import-session provenance, not persistent source CAD IDs.
+
 Use `scripts/audit_surface_mesh.py` for the current deterministic audit and screenshot generation:
 
 ```bash

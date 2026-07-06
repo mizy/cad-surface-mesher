@@ -1,6 +1,6 @@
+gmsh
 numpy
 pillow
 pyvista
 vtk
 trimesh
-

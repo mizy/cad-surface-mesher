@@ -1,11 +1,65 @@
 # CAD Tessellation
 
-Planned responsibility: embed CAD import and tessellation into the personal vehicle CAX workflow.
+Convert STEP, IGES, or BREP CAD inputs into triangle-only surface meshes for the personal vehicle CAX workflow.
 
-Initial scope:
+The implementation is local and OCCT-backed through the Gmsh Python API:
 
-- read CAD sources through a local OpenCascade-compatible toolchain
-- control chord tolerance, angular tolerance, edge length, and unit conversion explicitly
-- preserve body and face identities when the source file provides them
-- emit surface meshes that can feed mesh repair and Cd prediction
+- import CAD with `gmsh.model.occ.importShapes(..., highestDimOnly=True)`
+- generate a first-order 2D surface mesh with `gmsh.model.mesh.generate(2)`
+- export `surface_mesh.vtp` as the primary downstream format
+- write `tessellation_report.json` with quality gates and provenance limits
 
+## CLI
+
+```bash
+python cad-tessellation/scripts/cad_tessellate.py --help
+python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step \
+  --output-dir /tmp/cad-tessellation \
+  --mesh-size 0.05 \
+  --angle-deg 18 \
+  --chord 0.005
+```
+
+Supported CAD inputs are `.step`, `.stp`, `.iges`, `.igs`, `.brep`, and `.brp`.
+
+Key controls:
+
+- `--mesh-size`, `--mesh-size-min`, `--mesh-size-max`: Gmsh edge-size controls.
+- `--angle-deg`: curvature sizing control, mapped to `Mesh.MeshSizeFromCurvature`.
+- `--chord`: best-effort deflection hint, mapped to available Gmsh/OCC/STL deflection options when supported. It is recorded in the report and should not be treated as a strict Hausdorff guarantee.
+- `--occ-target-unit {auto,mm,cm,m}`: optional OCC unit conversion target.
+- `--import-labels/--no-import-labels`: best-effort import of OCC labels.
+- `--save-debug-msh`: also writes raw `surface_mesh.msh`.
+
+The CLI keeps heavy runtime imports lazy, so `--help` works before `gmsh`, `pyvista`, or `vtk` are installed. Execution commands report all missing dependencies together and point back to the repository requirements file.
+
+## Outputs
+
+`tessellate` writes:
+
+- `surface_mesh.vtp`: triangle-only VTP surface mesh.
+- `tessellation_report.json`: input summary, controls, import summary, mesh counts, topology, quality percentiles, gates, warnings, and provenance notes.
+- `surface_mesh.msh`: optional Gmsh debug output when `--save-debug-msh` is set.
+
+The VTP stores cell arrays:
+
+- `gmsh_surface_tag`: per-triangle Gmsh surface entity.
+- `gmsh_parent_volume_tag`: unique upward volume adjacency when available, otherwise `-1`.
+- `gmsh_element_tag`: original Gmsh element tag.
+
+Point data includes `gmsh_node_tag`.
+
+## Provenance Limits
+
+This first exporter preserves Gmsh import-session entity tags and best-effort entity names. It does not promise persistent source CAD face/body IDs, assembly hierarchy, instance transforms, colors, layers, or materials. Those limitations are always written into the JSON report.
+
+## Smoke Test
+
+The smoke command generates a small synthetic two-body STEP fixture, tessellates it, and checks that the output mesh is non-empty and triangle-only:
+
+```bash
+python cad-tessellation/scripts/cad_tessellate.py smoke --output-dir /tmp/cad-tessellation-smoke
+python -m unittest discover -s cad-tessellation/tests -p 'test_*.py'
+```
+
+The generated fixture lives under the selected output directory and is not committed.
