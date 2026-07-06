@@ -1,0 +1,15 @@
+from __future__ import annotations
+
+DEFAULT_WIDTH = 256
+DEFAULT_HEIGHT = 128
+DEFAULT_WEIGHTS = {
+    "mask": 0.60,
+    "depth": 0.40,
+    "normal": 0.00,
+}
+DEFAULT_SAME_CATEGORY_BONUS = 0.05
+DEFAULT_TARGET_LENGTH_M = 4.7
+REALISTIC_LENGTH_RANGE_M = (2.5, 7.0)
+NORMALIZED_LENGTH_RANGE = (0.5, 2.0)
+PCA_AXIS_RATIO_THRESHOLD = 1.25
+SUPPORTED_FORMATS_TEXT = "vtp/vtk/stl/obj/glb/gltf"

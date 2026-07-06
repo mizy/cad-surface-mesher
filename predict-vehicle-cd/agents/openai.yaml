@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vehicle Cd Predictor"
+  short_description: "Estimate vehicle Cd from side depth and normals."
+  default_prompt: "Use $predict-vehicle-cd to estimate a vehicle drag coefficient from a 3D mesh."

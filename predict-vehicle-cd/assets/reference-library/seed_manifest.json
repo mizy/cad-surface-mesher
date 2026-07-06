@@ -1,0 +1,436 @@
+{
+  "version": 1,
+  "notes": "Reference manifest with public-source Cd labels. Values come from mixed wind-tunnel, paper, OEM, and secondary-publication conditions; inspect cd_source before engineering use.",
+  "cars": [
+    {
+      "id": "drivaer-sedan",
+      "display_name": "DrivAer Sedan",
+      "category": "sedan",
+      "mesh": "../../../../../radiant_core/morphbox_place/templates/compiled/drivaer-sedan/car.vtp",
+      "cd": 0.2719704,
+      "cd_source": "Project standard DrivAer Sedan Cd label. Public DrivAer Notchback/Sedan values vary by condition; SimScale's DrivAer validation reports Notchback experimental Cd 0.277 and simulation Cd 0.271, while TU Berlin/TUM smooth-underbody values are lower at about 0.254-0.258: https://www.simscale.com/docs/validation-cases/validation-case-drivaer-model/ and https://www.researchgate.net/publication/277571349_Experimental_Comparison_of_the_Aerodynamic_Behavior_of_Fastback_and_Notchback_DrivAer_Models",
+      "cd_confidence": "authoritative"
+    },
+    {
+      "id": "model3",
+      "display_name": "Model 3",
+      "category": "sedan",
+      "mesh": "../../../../../radiant_core/morphbox_place/templates/compiled/model3/car.vtp",
+      "cd": 0.23,
+      "cd_source": "Tesla Model 3 pre-refresh/outgoing public Cd commonly reported as 0.23; 2024 facelift/Highland is reported at 0.219. Library template is treated as pre-refresh Model 3: https://insideevs.com/news/684644/new-model-3-is-tesla-most-aerodynamic-car-ever-cd-0-219/",
+      "cd_confidence": "derived"
+    },
+    {
+      "id": "aerosuv",
+      "display_name": "Aero SUV",
+      "category": "suv",
+      "mesh": "../../../../../radiant_core/morphbox_place/templates/compiled/aerosuv/car.vtp",
+      "cd": 0.282,
+      "cd_source": "User-confirmed project standard Cd label for the AeroSUV reference template. SAE Technical Paper 2019-01-0646 reports AeroSUV rear-end/cooling-condition variants near this range; use this project-confirmed value for the packaged standard library.",
+      "cd_confidence": "authoritative"
+    },
+    {
+      "id": "mpv",
+      "display_name": "Zeekr 009 MPV",
+      "category": "mpv",
+      "mesh": "../../../../../radiant_core/morphbox_place/templates/compiled/mpv/car.vtp",
+      "cd": 0.27,
+      "cd_source": "Zeekr 009 official product page lists 0.27 ultra-low drag coefficient: https://www.zeekrlife.com/en-mo/models/009/",
+      "cd_confidence": "authoritative"
+    },
+    {
+      "id": "pickup",
+      "display_name": "Hyundai Santa Cruz Pickup",
+      "category": "pickup",
+      "mesh": "../../../../../radiant_core/morphbox_place/templates/compiled/pickup/car.vtp",
+      "cd": 0.37,
+      "cd_source": "Hyundai News 2024 Santa Cruz specifications PDF lists Coefficient of Drag (Cd) 0.37: https://www.hyundainews.com/assets/documents/original/56229-2024SantaCruzSpecs060923.pdf",
+      "cd_confidence": "authoritative"
+    },
+    {
+      "id": "ford-f150-raptor-r-2024",
+      "display_name": "Ford F-150 Raptor R 2024",
+      "category": "pickup",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/ford-f150-raptor-r-2024/2024_ford_f-150_raptor_r-normalized.vtp",
+      "cd": 0.56,
+      "cd_source": "User-confirmed Cd 0.56 for this local 2024 Ford F-150 Raptor R reference. Public Cybertruck/Ram/Ford pickup CFD comparison coverage reports Ford F150/Raptor around 0.56 Cd, while Ford's official 2024 Raptor/Raptor R tech specs provide dimensions but do not publish an official Cd: https://insideevs.com/news/385397/tesla-cybertruck-aero-ram-ford-raptor/ and https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2024/f150/2024%20Ford%20Raptor%20and%20Raptor%20R%20Tech%20Specs.pdf",
+      "cd_confidence": "user-confirmed",
+      "target_dimensions_m": [
+        5.908,
+        2.21,
+        2.047
+      ],
+      "dimensions_source": "Ford official 2024 Raptor and Raptor R Tech Specs PDF lists Raptor R overall length 232.6 in, width without mirrors 87.0 in, and height 80.6 in: https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2024/f150/2024%20Ford%20Raptor%20and%20Raptor%20R%20Tech%20Specs.pdf",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/ford-f150-raptor-r-2024/2024_ford_f-150_raptor_r.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 5.908 x 2.210 x 2.047 m. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation selected for front -X."
+    },
+    {
+      "id": "tesla-cybertruck",
+      "display_name": "Tesla Cybertruck",
+      "category": "pickup",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/tesla-cybertruck/tesla_cybertruck-normalized.vtp",
+      "cd": 0.384,
+      "cd_source": "User-confirmed Cd 0.384 from independent A2 Wind Tunnel coverage. Tesla's production claim is commonly reported as 0.34, while the A2 Wind Tunnel test reported 0.384 and noted wind-tunnel setup and ride-height conditions can affect the value: https://insideevs.com/news/714423/tesla-cybertruck-aerodynamics-cd-wind/",
+      "cd_confidence": "wind-tunnel",
+      "target_dimensions_m": [
+        5.683,
+        2.032,
+        1.794
+      ],
+      "dimensions_source": "Tesla Cybertruck owner's manual lists overall length 5682.9 mm, width excluding mirrors 2031.6 mm, and medium air setting height 1793.8 mm: https://www.tesla.com/ownersmanual/cybertruck/en_us/GUID-12A976DD-EB60-431B-AFF1-5A37E95006DB.html",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/tesla-cybertruck/tesla_cybertruck.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 5.683 x 2.032 x 1.794 m. Axis order raw X,Z,Y -> canonical X,Y,Z; front_as_normalized selected for front -X. Height uses Tesla manual medium air setting."
+    },
+    {
+      "id": "toyota-hilux-2022",
+      "display_name": "Toyota Hilux 2022",
+      "category": "pickup",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/toyota-hilux-2022/2022_toyota_hilux-normalized.vtp",
+      "cd": 0.394,
+      "cd_source": "Toyota UK Hilux technical specifications PDF lists drag coefficient (Cd, dependent on vehicle specification) 0.394 and Double Cab dimensions 5325/1855/1815 mm: https://media.toyota.co.uk/wp-content/uploads/sites/5/2021/03/1611922571210129MHiluxTechSpec.pdf",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        5.325,
+        1.855,
+        1.815
+      ],
+      "dimensions_source": "Toyota UK Hilux technical specifications PDF lists Double Cab dimensions 5325/1855/1815 mm: https://media.toyota.co.uk/wp-content/uploads/sites/5/2021/03/1611922571210129MHiluxTechSpec.pdf",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/toyota-hilux-2022/2022_toyota_hilux.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 5.325 x 1.855 x 1.815 m. Axis order raw Z,X,Y -> canonical X,Y,Z; front_as_normalized selected for front -X."
+    },
+    {
+      "id": "rivian-r1t-2022",
+      "display_name": "Rivian R1T 2022",
+      "category": "pickup",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/rivian_r1t_2022_free/rivian_r1t_2022-normalized.vtp",
+      "cd": 0.3,
+      "cd_source": "InsideEVs reports Rivian's R1T manufacturer claim as 0.30 Cd and notes AirShaper's scanned-model simulation result of 0.322 Cd: https://insideevs.com/news/611642/rivian-r1t-aerodynamics-drag-coefficient-simulatiion/",
+      "cd_confidence": "manufacturer-claimed",
+      "target_dimensions_m": [
+        5.514,
+        2.014,
+        1.986
+      ],
+      "dimensions_source": "TractionLife quotes Rivian specifications at 217.1 in / 5514 mm length and 79.3 in / 2014 mm width; EVSpecifications lists 2022 R1T height as 78.3 in / 1989 mm: https://tractionlife.com/rivian-truck-specs-and-abilities/ and https://www.evspecifications.com/en/model/f8da106",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/rivian_r1t_2022_free/scene.gltf",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLTF to existing canonical VTP dimensions 5.514 x 2.014 x 1.986 m. Axis order already canonical X,Y,Z; front_as_normalized selected for front -X."
+    },
+    {
+      "id": "toyota-fortuner-2021",
+      "display_name": "Toyota Fortuner 2021",
+      "category": "suv",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/toyota-fortuner-2021/toyota_fortuner_2021-normalized.vtp",
+      "cd": 0.38,
+      "cd_source": "A Simetris numerical aerodynamics study reports SUV Cd values in the 0.32-0.38 range and identifies the Toyota Fortuner as the highest among the compared SUVs; this library uses the top of that reported range for the 2021 Fortuner label: https://jurnal.umk.ac.id/index.php/simet/article/view/10890",
+      "cd_confidence": "research-derived",
+      "target_dimensions_m": [
+        4.795,
+        1.855,
+        1.835
+      ],
+      "dimensions_source": "CarExpert 2021 Toyota Fortuner GXL specifications list 4795 mm length, 1855 mm width, and 1835 mm height: https://www.carexpert.com.au/toyota/fortuner/2021-gxl-2-8l-suv-4x4-diesel-automatic-jokks5kw20210401",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/toyota-fortuner-2021/toyota_fortuner_2021.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 4.795 x 1.855 x 1.835 m. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation selected for front -X."
+    },
+    {
+      "id": "toyota-auris-wagon",
+      "display_name": "Toyota Auris Touring Sports",
+      "category": "wagon",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/toyota-auris-wagon/toyota_auris_wagon-normalized.vtp",
+      "cd": 0.28,
+      "cd_source": "Toyota Europe newsroom states the Auris Touring Sports has a 0.28 drag coefficient: https://newsroom.toyota.eu/2019-2013-the-new-auris-touring-sports-dpl-stylish-exterior-design/",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        4.595,
+        1.76,
+        1.486
+      ],
+      "dimensions_source": "Encycarpedia Toyota Auris Touring Sports specification lists 180.9/69.3/58.5 in dimensions, converted to approximately 4.595/1.760/1.486 m: https://www.encycarpedia.com/us/toyota/15-auris-touring-sports-1-8-hybrid-wagon",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/toyota-auris-wagon/toyota_auris_wagon.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 4.595 x 1.760 x 1.486 m. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation selected for front -X."
+    },
+    {
+      "id": "deepal-sl03",
+      "display_name": "Deepal SL03",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/sl03/sl03-filter-parts-negx-zup.vtp",
+      "cd": 0.23,
+      "cd_source": "User-confirmed local model identity as Deepal SL03. Public sources list 0.23 Cd, including Auto&Design's Changan Deepal SL03 article and CarNewsChina 2025 SL03 parameters: https://autodesignmagazine.com/en/2023/06/changan-deepal-sl03-the-first-of-the-new-era/ and https://data.carnewschina.com/database/deepal/deepal-sl03/2025/params",
+      "cd_confidence": "derived"
+    },
+    {
+      "id": "xiaomi-su7",
+      "display_name": "Xiaomi SU7",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/su7/su7-original.stl",
+      "cd": 0.195,
+      "cd_source": "Xiaomi official global Discover SU7 article lists an extra-low drag coefficient of 0.195; CarNewsChina launch coverage quotes Xiaomi's 0.195 Cd claim and notes the value applies to the no-LiDAR version shown in the aero video: https://www.mi.com/global/discover/article?id=3263 and https://carnewschina.com/2023/12/28/xiaomi-officially-unveiled-its-first-car-xiaomi-su7-with-800-km-range-and-2-78s-0-100km-h-acceleration/",
+      "cd_confidence": "authoritative"
+    },
+    {
+      "id": "xiaomi-yu7",
+      "display_name": "Xiaomi YU7",
+      "category": "suv",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/2025_xiaomi_yu7/normalized/yu7-normalized.vtp",
+      "cd": 0.245,
+      "cd_source": "Xiaomi official global Discover YU7 article lists Cd 0.245 and a 59 km CLTC range improvement from aero optimization: https://www.mi.com/global/discover/article?id=4925",
+      "cd_confidence": "authoritative"
+    },
+    {
+      "id": "nio-et5",
+      "display_name": "NIO ET5",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/et5/et5-no-ground.stl",
+      "cd": 0.24,
+      "cd_source": "NIO official ET5 Netherlands price list/specification PDF lists 0.24 Drag Coefficient (Cd): https://www-cdn.eu.nio.com/officialsite/files/2023-06-20/Price%20list%20pdf-0620/Netherlands/NIO_ET5_NL_Prijslijst_202306.pdf",
+      "cd_confidence": "authoritative"
+    },
+    {
+      "id": "toyota-rav4",
+      "display_name": "Toyota RAV4 Plug-in Hybrid",
+      "category": "suv",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/rav4/rav4.vtp",
+      "cd": 0.32,
+      "cd_source": "Toyota UK RAV4 Plug-in technical specifications PDF lists Coefficient of drag (Cd) 0.32. The local mesh is a generic RAV4-family model, so treat this as a family-level label: https://media.toyota.co.uk/wp-content/uploads/sites/5/2021/03/1611678385210114MRAV4PHEVTechSpec.pdf",
+      "cd_confidence": "derived"
+    },
+    {
+      "id": "model-y",
+      "display_name": "Tesla Model Y",
+      "category": "suv",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/model-y/model-y.stl",
+      "cd": 0.23,
+      "cd_source": "Public EV specifications list legacy/pre-refresh Tesla Model Y variants at Cd 0.23; Top Gear notes the 2025 refresh reduced Model Y from 0.23 Cd to 0.22 Cd. The local mesh has no model-year metadata, so this record uses the pre-refresh 0.23 value: https://evkx.net/models/tesla/model_y/model_y_long_range/specifications/ and https://www.topgear.com/car-news/electric/these-are-12-most-aerodynamically-efficient-evs-sale-uk",
+      "cd_confidence": "derived"
+    },
+    {
+      "id": "buick-regal",
+      "display_name": "Buick Regal",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/buick-regal/Buick_Regal.stl",
+      "cd": 0.27,
+      "cd_source": "Archived 2009 China Buick Regal brochure states the new Regal achieved a 0.27 ultra-low drag coefficient. The local mesh has no model-year metadata, so treat this as a Regal-family label: https://autocatalogarchive.com/wp-content/uploads/2025/03/Buick-Regal-2009-CN-.pdf",
+      "cd_confidence": "derived"
+    },
+    {
+      "id": "volkswagen-caddy-2017",
+      "display_name": "Volkswagen Caddy 2017",
+      "category": "van",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/volkswagen-caddy-2017/volkswagen_caddy_2017-normalized.vtp",
+      "cd": 0.33,
+      "cd_source": "The local mesh is labeled Volkswagen Caddy 2017. Public coverage of the fifth-generation Caddy reports the new model reduced Cd from the previous model's 0.33 to 0.30, so this 2017/outgoing-generation mesh uses 0.33 as a derived label: https://www.motor1.com/news/399766/2020-volkswagen-caddy-debut/ and https://www.kosmocar.gr/en/nea/deltia-tupou/2020/25112020-new-volkswagen-caddy-5-bigger-more-practical-more-efficient-smarter",
+      "cd_confidence": "derived",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/volkswagen-caddy-2017/volkswagen_caddy_2017.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via trimesh scene geometry. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation applied for front -X; scaled to 2017 Caddy standard-wheelbase length 4.408 m."
+    },
+    {
+      "id": "changan-cs95",
+      "display_name": "Changan CS95",
+      "category": "suv",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/changan-cs95/changan_cs95-normalized.vtp",
+      "cd": 0.294,
+      "cd_source": "No credible public absolute Cd value was found for Changan CS95 during web search; public sources list dimensions and mention active grille drag reduction only. This initial label is the current geometry-similarity estimate from the packaged library using the normalized mesh, with top matches Aero SUV, Toyota RAV4, Zeekr 009 MPV, Model Y, and Hyundai Santa Cruz. Replace when an authoritative CS95 Cd source is available. Dimensions source: https://global.chinadaily.com.cn/a/202302/15/WS63ec8a21a31057c47ebaef49.html; active-grille relative-drag source: https://auto.cctv.com/2023/02/15/ARTImiXtSZV6WxprokyHTjAx230215.shtml",
+      "cd_confidence": "derived",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/changan-cs95/changan_cs95.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via trimesh scene geometry. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation applied for front -X; scaled to CS95 Plus length 4.949 m. Resulting width/height are larger than published dimensions, likely due to source mesh proportions or exterior extremities."
+    },
+    {
+      "id": "byd-seal",
+      "display_name": "BYD Seal",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/byd-seal/2024_byd_seal-normalized.vtp",
+      "cd": 0.219,
+      "cd_source": "BYD official SEAL page lists a drag coefficient of 0.219 Cd, and BYD official SEAL specification sheets list 4800/1875/1460 mm dimensions: https://www.byd.com/eu/news-list/BYD_SEAL_Dynamic_and_Intelligent.html and https://www.byd.com/material/byd-site/zm/product/seal-rhd/BYD%20SEAL%20Vehicle%20Specifications.pdf",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        4.8,
+        1.875,
+        1.46
+      ],
+      "dimensions_source": "BYD official SEAL vehicle specifications PDF lists 4800/1875/1460 mm dimensions: https://www.byd.com/material/byd-site/zm/product/seal-rhd/BYD%20SEAL%20Vehicle%20Specifications.pdf",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/byd-seal/2024_byd_seal.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 4.800 x 1.875 x 1.460 m. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation selected for front -X."
+    },
+    {
+      "id": "byd-atto-3",
+      "display_name": "BYD Atto 3",
+      "category": "suv",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/byd-atto-3/2024_byd_atto_3-normalized.vtp",
+      "cd": 0.29,
+      "cd_source": "BYD official ATTO 3 specification PDF lists Drag coefficient (Cd) 0.29 and dimensions 4455/1875/1615 mm: https://www.byd.com/content/dam/byd-site/en-be/product/atto3/BYD%20ATTO%203.pdf",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        4.455,
+        1.875,
+        1.615
+      ],
+      "dimensions_source": "BYD official ATTO 3 specification PDF lists 4455/1875/1615 mm dimensions: https://www.byd.com/content/dam/byd-site/en-be/product/atto3/BYD%20ATTO%203.pdf",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/byd-atto-3/2024_byd_atto_3.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 4.455 x 1.875 x 1.615 m. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation selected for front -X."
+    },
+    {
+      "id": "nio-et7",
+      "display_name": "NIO ET7",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/nio-et7/2022_nio_et7-normalized.vtp",
+      "cd": 0.208,
+      "cd_source": "NIO official ET7 page lists Ultra-Low Cd of 0.208. NIO official ET7 page lists 5101 mm length and 1987 mm width; EVKX lists full dimensions 5101/1987/1509 mm: https://www.nio.com/et7 and https://evkx.net/models/nio/et7/et7/",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        5.101,
+        1.987,
+        1.509
+      ],
+      "dimensions_source": "NIO official ET7 page lists 5101 mm length and 1987 mm width; EVKX lists full dimensions 5101/1987/1509 mm: https://www.nio.com/et7 and https://evkx.net/models/nio/et7/et7/",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/nio-et7/2022_nio_et7.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 5.101 x 1.987 x 1.509 m. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation selected for front -X."
+    },
+    {
+      "id": "nio-es7",
+      "display_name": "NIO ES7",
+      "category": "suv",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/nio-es7/nio_es7_2023-normalized.vtp",
+      "cd": 0.263,
+      "cd_source": "NIO official ES7 design blog lists drag coefficient as low as 0.263, and NIO official ES7 page lists dimensions 4912/1987/1720 mm: https://www.nio.com/blog/nio-es7-our-approach-design-and-autonomous-driving and https://www.nio.com/es7",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        4.912,
+        1.987,
+        1.72
+      ],
+      "dimensions_source": "NIO official ES7 page lists 4912/1987/1720 mm dimensions: https://www.nio.com/es7",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/nio-es7/nio_es7_2023.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 4.912 x 1.987 x 1.720 m. Axis order raw Z,X,Y -> canonical X,Y,Z; 180 deg Z rotation selected for front -X."
+    },
+    {
+      "id": "xpeng-p7",
+      "display_name": "XPeng P7",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/xpeng-p7/2022_xpeng_p7-normalized.vtp",
+      "cd": 0.236,
+      "cd_source": "XPeng official P7 page lists Ultra-low Cd 0.236 and dimensions 4888/1896/1450 mm: https://www.xpeng.com/ae/p7.html",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        4.888,
+        1.896,
+        1.45
+      ],
+      "dimensions_source": "XPeng official P7 page lists 4888/1896/1450 mm dimensions: https://www.xpeng.com/ae/p7.html",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/xpeng-p7/2022_xpeng_p7.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 4.888 x 1.896 x 1.450 m. Horizontal PCA was used because raw length/width spans were close; front_as_normalized selected for front -X."
+    },
+    {
+      "id": "changan-ford-mondeo-st-line",
+      "display_name": "Changan Ford Mondeo ST-Line",
+      "category": "sedan",
+      "mesh": "/Users/miaozhuang/Documents/models/cars/changan-ford-mondeo-st-line/changan-ford_mondeo_st_line-normalized.vtp",
+      "cd": 0.293,
+      "cd_source": "Ford China official Mondeo launch/newsroom pages list ultra-low drag coefficient 0.293 Cd and dimensions 4935/1875/1500 mm: https://www.ford.com.cn/newsroom/2022/20220318 and https://www.ford.com.cn/newsroom/2022/20220413/",
+      "cd_confidence": "authoritative",
+      "target_dimensions_m": [
+        4.935,
+        1.875,
+        1.5
+      ],
+      "dimensions_source": "Ford China official Mondeo launch/newsroom page lists 4935/1875/1500 mm dimensions: https://www.ford.com.cn/newsroom/2022/20220413/",
+      "mesh_source": "/Users/miaozhuang/Documents/models/cars/changan-ford-mondeo-st-line/changan-ford_mondeo_st_line.glb",
+      "mesh_license": "local user-provided asset",
+      "mesh_note": "Normalized from GLB via target dimensions 4.935 x 1.875 x 1.500 m. Axis order raw Z,X,Y -> canonical X,Y,Z; front_as_normalized selected for front -X."
+    }
+  ],
+  "pending_cars": [
+    {
+      "id": "hyundai-ioniq6",
+      "display_name": "Hyundai IONIQ 6",
+      "category": "sedan",
+      "cd": 0.21,
+      "cd_source": "Hyundai official news release lists IONIQ 6 drag coefficient 0.21: https://www.hyundainews.com/releases/3665?lang=en_US",
+      "cd_confidence": "authoritative",
+      "mesh_status": "missing",
+      "candidate_mesh_sources": [
+        {
+          "source": "Sketchfab",
+          "url": "https://sketchfab.com/3d-models/2022-hyundai-ioniq-6-64b7bfb50f304e428089f61a63e4dd11",
+          "license": "CC Attribution",
+          "author": "RADMATTER12"
+        },
+        {
+          "source": "Sketchfab",
+          "url": "https://sketchfab.com/3d-models/hyundai-ioniq-6-84b503d8606542ae80c09a859e9fd2f2",
+          "license": "CC Attribution",
+          "author": "Mona x Supercars"
+        }
+      ]
+    },
+    {
+      "id": "mercedes-eqs",
+      "display_name": "Mercedes-Benz EQS",
+      "category": "sedan",
+      "cd": 0.2,
+      "cd_source": "Mercedes-Benz Group aerodynamics history lists EQS Cd from 0.20; Mercedes-Benz USA media release lists EQS cd figure from as low as 0.20: https://group.mercedes-benz.com/company/tradition/company-history/history-aerodynamic.html and https://media.mbusa.com/releases/the-eqs-the-first-electric-vehicle-in-the-luxury-class",
+      "cd_confidence": "authoritative",
+      "mesh_status": "missing",
+      "candidate_mesh_sources": [
+        {
+          "source": "Sketchfab",
+          "url": "https://sketchfab.com/3d-models/2024-mercedes-benz-eqs-580-b351c436890f4198b6aae86ffc9b0222",
+          "license": "CC Attribution",
+          "author": "DisneyCars"
+        }
+      ]
+    },
+    {
+      "id": "vw-id7",
+      "display_name": "Volkswagen ID.7",
+      "category": "sedan",
+      "cd": 0.23,
+      "cd_source": "Volkswagen official newsroom article lists ID.7 Cd value 0.23 and frontal area 2.46 m2: https://www.volkswagen-newsroom.com/en/press-releases/the-id7-sophisticated-aerodynamics-for-long-range-and-high-efficiency-17309",
+      "cd_confidence": "authoritative",
+      "mesh_status": "missing",
+      "candidate_mesh_sources": [
+        {
+          "source": "Sketchfab",
+          "url": "https://sketchfab.com/3d-models/volkswagen-id7-8b8e52403f8640d3b91a4c4a2381b1f1",
+          "license": "check source page before use",
+          "author": "MrEsper"
+        }
+      ]
+    },
+    {
+      "id": "porsche-taycan",
+      "display_name": "Porsche Taycan",
+      "category": "sedan",
+      "cd": 0.22,
+      "cd_source": "Porsche official newsroom article lists Taycan Cd value from 0.22, the best drag coefficient of current Porsche models: https://newsroom.porsche.com/en_US/products/taycan/aerodynamics-18554.html",
+      "cd_confidence": "authoritative",
+      "mesh_status": "missing",
+      "candidate_mesh_sources": [
+        {
+          "source": "Sketchfab",
+          "url": "https://sketchfab.com/3d-models/porshe-taycan-c6004141452e4d3ab048bf0fee52666d",
+          "license": "CC Attribution",
+          "author": "Mikhail Hamanovich"
+        },
+        {
+          "source": "Sketchfab",
+          "url": "https://sketchfab.com/3d-models/2023-porsche-taycan-turbo-s-862b651f6dc644b9a4da47990880ae28",
+          "license": "CC Attribution",
+          "author": "tonielpro520"
+        }
+      ]
+    }
+  ]
+}
