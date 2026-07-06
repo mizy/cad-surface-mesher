@@ -337,6 +337,11 @@ def audit(path: Path, output_dir: Path, target: str, width: int, height: int) ->
     quality = triangle_quality(points, faces)
     volume = signed_volume(points, faces)
     watertight_topology = edge_stats["boundary_edges"] == 0 and edge_stats["non_manifold_edges"] == 0
+    volume_reliable = bool(
+        watertight_topology
+        and components["count"] == 1
+        and quality["degenerate_faces"] == 0
+    )
     normals = oriented_normals(points, faces)
     images = save_view_images(output_dir / "visual", "surface", points, faces, boundary_edges, normals, width=width, height=height)
     checks = visual_checks(images, target)
@@ -355,11 +360,12 @@ def audit(path: Path, output_dir: Path, target: str, width: int, height: int) ->
             "components": components,
             "quality": quality,
             "signed_volume": volume,
-            "volume_reliable": bool(watertight_topology),
+            "volume_reliable": volume_reliable,
             "self_intersections": {"checked": False, "reason": "not implemented in this first audit tool"},
         },
         "gates": {
             "watertight_topology": bool(watertight_topology),
+            "single_reliable_volume": volume_reliable,
             "no_degenerate_faces": quality["degenerate_faces"] == 0,
             "self_intersections_checked": False,
             "engineering_pass": False,

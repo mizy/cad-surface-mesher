@@ -72,6 +72,20 @@ Never watertight-remesh the full dirty assembly directly.
 
 The first stage decides what surface should exist. The second stage makes that surface watertight.
 
+Use `mesh-repair/scripts/two_stage_watertight_remesh.py` for the current local prototype when only mesh inputs are available:
+
+```bash
+python mesh-repair/scripts/two_stage_watertight_remesh.py /path/to/vehicle.vtp \
+  --group-source-gltf /path/to/scene.gltf \
+  --output-dir outputs/vehicle-two-stage \
+  --depth-tolerance 0.0 \
+  --voxel-pitch 0.02
+```
+
+When `--group-source-gltf` is supplied, the script first removes explicit interior geometry names such as `carInternal`, `INT_*`, seats, dashboard, center console, and steering wheel by flattened GLTF face ranges, then runs mesh-only exterior visibility. This assumes the GLTF flatten order matches the input triangle order; validate with screenshots and metrics.
+
+Treat `watertight_topology_pass` as a narrow topology result only. Do not call the mesh engineering-ready until component count, volume reliability, self-intersection checks, visual opening policy, and bbox/silhouette drift all pass.
+
 ## Group Visibility Workflow
 
 Prefer group-level decisions before body-level or face-level work. A human CAD cleanup usually starts by hiding named assembly groups and checking whether the exterior changed; follow that pattern.
