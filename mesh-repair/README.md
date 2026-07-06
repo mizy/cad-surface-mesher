@@ -54,3 +54,5 @@ The intended flow is:
 4. refine critical regions directly against the source exterior geometry
 5. use the coarse watertight shell only as topology/closure guidance
 6. report source-to-output drift per critical region
+
+Depth maps are the preferred first signal for mesh-only inputs. Render depth plus face IDs from several directions, detect strong depth gradients and silhouette/face-id discontinuities, then map those pixels back to source faces. Merge the resulting scores into a size field and create a conforming adaptive mesh: fine regions and coarse regions must share stitched transition edges rather than overlapping as separate meshes.

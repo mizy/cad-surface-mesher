@@ -87,6 +87,17 @@ Adaptive refinement must sample or project against the original CAD faces or the
 
 If source geometry is unavailable and only a coarse shell remains, report the result as topology-only reconstruction, not source-faithful adaptive meshing.
 
+Depth-map driven refinement is a preferred mesh-only signal:
+
+1. Render depth plus face-id buffers from several target-relevant directions.
+2. Compute depth gradients, silhouette edges, normal discontinuities, and face-id discontinuities in image space.
+3. Map high-change pixels back to original source faces, not to the coarse shell.
+4. Combine multi-view scores into a source-face refinement field.
+5. Assign target sizes by score bands, for example coarse 20-30mm, transition 10-15mm, critical 5-8mm.
+6. Generate one conforming adaptive mesh or stitch transition rings so fine and coarse regions share edges. Do not overlay independent fine and coarse meshes with T-junctions.
+
+The final output should be a single inspectable surface mesh with local refinement provenance showing which views and source faces caused each critical region to be refined.
+
 Use `mesh-repair/scripts/two_stage_watertight_remesh.py` for the current local prototype when only mesh inputs are available:
 
 ```bash
