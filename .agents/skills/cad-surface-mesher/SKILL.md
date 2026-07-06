@@ -57,6 +57,21 @@ If the user asks for simple external Cd triage, cap small panel gaps and ask bef
 8. Re-audit and regenerate screenshots after each repair.
 9. Stop when validators pass or when policy/tolerance limits require user confirmation.
 
+## Two-Stage Watertight Strategy
+
+Never watertight-remesh the full dirty assembly directly.
+
+1. Exterior wall extraction:
+   - remove interior, hidden, duplicate, and AABB-contained internal groups first
+   - keep only the target exterior wall candidate set
+   - accept that this intermediate mesh may still have open boundaries, panel gaps, and functional openings
+2. Watertight remesh:
+   - run remesh or hole sealing only on the exterior wall candidate set
+   - cap or preserve grille, intake, wheel-well, underbody, and exhaust openings according to target policy
+   - validate silhouette/bbox drift against the pre-remesh exterior wall, not the unfiltered assembly
+
+The first stage decides what surface should exist. The second stage makes that surface watertight.
+
 ## Group Visibility Workflow
 
 Prefer group-level decisions before body-level or face-level work. A human CAD cleanup usually starts by hiding named assembly groups and checking whether the exterior changed; follow that pattern.
