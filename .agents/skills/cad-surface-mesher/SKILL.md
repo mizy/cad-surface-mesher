@@ -98,6 +98,21 @@ Depth-map driven refinement is a preferred mesh-only signal:
 
 The final output should be a single inspectable surface mesh with local refinement provenance showing which views and source faces caused each critical region to be refined.
 
+Use `mesh-repair/scripts/adaptive_depth_refine.py` to prototype this source-based refinement:
+
+```bash
+python mesh-repair/scripts/adaptive_depth_refine.py /path/to/stage1_exterior_candidate.vtp \
+  --output-dir outputs/adaptive-depth-refine \
+  --grid-size 900 \
+  --gradient-percentile 98 \
+  --disable-silhouette \
+  --base-size 0.03 \
+  --transition-size 0.015 \
+  --fine-size 0.008
+```
+
+The script writes a source-face refinement field, a conforming refined source mesh, per-view critical-pixel images, and a JSON report. It is a refinement-field and source-split prototype; watertight sealing remains a separate downstream step.
+
 Use `mesh-repair/scripts/two_stage_watertight_remesh.py` for the current local prototype when only mesh inputs are available:
 
 ```bash

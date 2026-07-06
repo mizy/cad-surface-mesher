@@ -56,3 +56,19 @@ The intended flow is:
 6. report source-to-output drift per critical region
 
 Depth maps are the preferred first signal for mesh-only inputs. Render depth plus face IDs from several directions, detect strong depth gradients and silhouette/face-id discontinuities, then map those pixels back to source faces. Merge the resulting scores into a size field and create a conforming adaptive mesh: fine regions and coarse regions must share stitched transition edges rather than overlapping as separate meshes.
+
+Run the current source-refinement prototype on a Stage 1 exterior candidate:
+
+```bash
+python mesh-repair/scripts/adaptive_depth_refine.py \
+  outputs/vehicle-two-stage/stage1_exterior_candidate.vtp \
+  --output-dir outputs/vehicle-adaptive-depth-refine \
+  --grid-size 900 \
+  --gradient-percentile 98 \
+  --disable-silhouette \
+  --base-size 0.03 \
+  --transition-size 0.015 \
+  --fine-size 0.008
+```
+
+This writes `refinement_field.vtp`, `adaptive_refined_source.vtp`, per-view critical-pixel PNGs, and `adaptive_refinement_report.json`. The script refines source triangles conformingly; it does not coarsen already-dense source areas and does not seal the mesh by itself.
