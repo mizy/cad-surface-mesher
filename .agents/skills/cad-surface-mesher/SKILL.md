@@ -232,6 +232,8 @@ Every completed meshing or repair run must write an HTML report alongside mesh o
 
 For a multi-step run, the primary user-facing artifact is one single-file HTML workflow report. Stage-specific HTML/JSON reports may exist as intermediate debug artifacts, but do not present them as separate final reports unless the user asks for stage details.
 
+HTML 3D previews may decimate only for browser/report size. Keep source metrics and output mesh files full fidelity. When visual fidelity matters, raise `CAD_SURFACE_MESHER_VIEWER_TRIANGLES` for report generation and state the preview triangle count in the report.
+
 Required sections:
 
 - `geometry_to_mesh_trace`: ordered stages from original geometry through group filtering, exterior extraction, refinement, repair, sealing, and final mesh.

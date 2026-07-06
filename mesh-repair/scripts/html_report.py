@@ -15,7 +15,7 @@ from mesh_io import read_surface, triangle_faces
 
 
 VTK_JS_URL = "https://unpkg.com/vtk.js@latest/vtk.js"
-MAX_VIEWER_TRIANGLES = 60_000
+DEFAULT_MAX_VIEWER_TRIANGLES = 250_000
 
 
 def write_html_report(report: dict[str, Any], path: Path, title: str) -> None:
@@ -296,8 +296,9 @@ def resolve_path(raw_path: str | None, report_dir: Path) -> Path | None:
 
 def mesh_preview(label: str, path: Path) -> dict[str, Any]:
     mesh = read_surface(path)
-    if mesh.n_cells > MAX_VIEWER_TRIANGLES:
-        reduction = 1.0 - (MAX_VIEWER_TRIANGLES / float(mesh.n_cells))
+    max_triangles = max_viewer_triangles()
+    if mesh.n_cells > max_triangles:
+        reduction = 1.0 - (max_triangles / float(mesh.n_cells))
         mesh = mesh.decimate_pro(reduction, preserve_topology=False).triangulate().clean()
     faces = triangle_faces(mesh)
     polys = np.column_stack((np.full((faces.shape[0], 1), 3, dtype=np.uint32), faces)).ravel()
@@ -310,6 +311,16 @@ def mesh_preview(label: str, path: Path) -> dict[str, Any]:
         "triangles": int(faces.shape[0]),
         "points_count": int(points.shape[0]),
     }
+
+
+def max_viewer_triangles() -> int:
+    raw = os.environ.get("CAD_SURFACE_MESHER_VIEWER_TRIANGLES")
+    if not raw:
+        return DEFAULT_MAX_VIEWER_TRIANGLES
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return DEFAULT_MAX_VIEWER_TRIANGLES
 
 
 def vtk_js_source() -> str:

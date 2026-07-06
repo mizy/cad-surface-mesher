@@ -93,6 +93,8 @@ python mesh-repair/scripts/workflow_report.py \
 
 The workflow report is a single-file HTML report with embedded vtk.js, embedded before/after preview mesh data, embedded diagnostic images, and a JSON companion. It records whether adaptive refinement was used by the final watertight output or only run as a diagnostic branch.
 
+The embedded 3D viewer uses `CAD_SURFACE_MESHER_VIEWER_TRIANGLES` as a triangle budget. Increase it for high-fidelity inspection; the mesh outputs and JSON metrics are not downsampled by this viewer budget.
+
 ## Report Contract
 
 Repair outputs must include an HTML report and a machine-readable JSON report with:
