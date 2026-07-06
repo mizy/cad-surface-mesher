@@ -1,6 +1,6 @@
 ---
 name: cad-surface-mesher
-description: Build and validate target-specific CAD surface meshes from CAD or vehicle mesh inputs. Use when Codex needs to tessellate CAD, remove interior vehicle parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal panel gaps, handle grille/opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce a surface mesh quality report for CFD/CAE preprocessing.
+description: Build and validate target-specific CAD surface meshes from CAD or vehicle mesh inputs. Use when Codex needs to convert CAD or mesh inputs to triangle-only surface meshes, remove interior vehicle parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal panel gaps, handle grille/opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce a surface mesh quality report for CFD/CAE preprocessing.
 ---
 
 # CAD Surface Mesher
@@ -127,13 +127,15 @@ A final engineering pass requires all required metrics to be present. Missing me
 
 ## Bundled Tool
 
-From the repository root, use `cad-tessellation/scripts/cad_tessellate.py` first when the input is STEP, IGES, or BREP CAD and a triangle-only surface mesh is needed:
+From the repository root, use `cad-tessellation/scripts/cad_tessellate.py` first when a CAD or mesh input must be converted to a triangle-only surface mesh:
 
 ```bash
 python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step --output-dir /tmp/cad-tessellation
 ```
 
-The tessellator writes `surface_mesh.vtp` with `gmsh_surface_tag`, `gmsh_parent_volume_tag`, and `gmsh_element_tag` cell arrays plus `tessellation_report.json`. Treat those tags as Gmsh import-session provenance, not persistent source CAD IDs.
+STEP, IGES, and BREP inputs use Gmsh/OCC. STL, OBJ, VTP, VTK, GLB, and GLTF inputs are read as existing meshes and converted with surface extraction plus triangulation.
+
+The tessellator writes `surface_mesh.vtp` plus `tessellation_report.json`. CAD outputs include `gmsh_surface_tag`, `gmsh_parent_volume_tag`, and `gmsh_element_tag` cell arrays. Mesh outputs include `source_triangle_index`. Treat all of these as import/output-session provenance, not persistent source CAD IDs.
 
 Use `scripts/audit_surface_mesh.py` for the current deterministic audit and screenshot generation:
 

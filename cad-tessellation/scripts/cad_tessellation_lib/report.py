@@ -87,6 +87,86 @@ def build_tessellation_report(
     return report
 
 
+def build_mesh_input_report(
+    *,
+    np: Any,
+    input_path: Path,
+    mesh_format: str,
+    controls: Any,
+    mesh: dict[str, Any],
+    mesh_path: Path,
+    report_path: Path,
+    warnings: list[str],
+) -> dict[str, Any]:
+    points = mesh["points"]
+    triangles = mesh["triangles"]
+    edge_stats, edge_to_faces = edge_topology(triangles)
+    quality = triangle_quality(np, points, triangles)
+    components = connected_components(triangles.shape[0], edge_to_faces)
+    limitations = mesh_provenance_limitations()
+
+    return {
+        "input": {
+            "path": str(input_path),
+            "format": mesh_format,
+            "kind": "mesh",
+            "file_size_bytes": input_path.stat().st_size,
+        },
+        "controls": {
+            "source": "mesh",
+            "cad_controls_applied": False,
+            "mesh_size": controls.mesh_size,
+            "mesh_size_min": controls.mesh_size_min,
+            "mesh_size_max": controls.mesh_size_max,
+            "angle_deg": controls.angle_deg,
+            "chord": controls.chord,
+            "save_debug_msh": controls.save_debug_msh,
+        },
+        "import_summary": {
+            "source": "mesh",
+            "operation": "read_surface_triangulate_clean",
+            "entity_counts": None,
+            "labels_imported": False,
+            "named_surface_count": 0,
+            "named_volume_count": 0,
+        },
+        "outputs": {
+            "surface_mesh_vtp": str(mesh_path),
+            "report": str(report_path),
+            "debug_msh": None,
+        },
+        "mesh_metrics": {
+            "points": int(points.shape[0]),
+            "triangles": int(triangles.shape[0]),
+            "bounds": bounds_dict(points),
+            "surface_area": quality["surface_area"],
+        },
+        "topology": {
+            **edge_stats,
+            "components": components,
+            "degenerate_faces": quality["degenerate_faces"],
+        },
+        "quality": {
+            "area": quality["area"],
+            "aspect_ratio": quality["aspect_ratio"],
+        },
+        "provenance": {
+            "cell_arrays": ["source_triangle_index"],
+            "point_arrays": [],
+            "surface_summary": [],
+            "volume_summary": [],
+            "limitations": limitations,
+        },
+        "gates": {
+            "non_empty": bool(points.shape[0] > 0 and triangles.shape[0] > 0),
+            "all_triangles": bool(mesh["all_triangles"]),
+            "report_complete": True,
+            "surface_mesh_written": mesh_path.exists(),
+        },
+        "warnings": warnings,
+    }
+
+
 def controls_dict(controls: Any, applied_options: dict[str, Any]) -> dict[str, Any]:
     return {
         "occ_target_unit": controls.occ_target_unit,
@@ -243,6 +323,15 @@ def provenance_limitations(mesh: dict[str, Any], controls: Any) -> list[str]:
     if any(int(tag) < 0 for tag in mesh["parent_volume_tags"].tolist()):
         limitations.append("Some triangles have gmsh_parent_volume_tag=-1 because no unique upward volume adjacency was available.")
     return limitations
+
+
+def mesh_provenance_limitations() -> list[str]:
+    return [
+        "Mesh inputs are already discretized; no CAD surface/body provenance is available.",
+        "source_triangle_index is the post-triangulation output cell index, not a persistent source mesh cell ID.",
+        "GLB/GLTF scene hierarchy, materials, textures, and node transforms are flattened into one triangle surface.",
+        "VTP is the primary output because STL/OBJ would drop cell-level provenance arrays.",
+    ]
 
 
 def highest_dimension(entity_counts: dict[str, int]) -> int | None:

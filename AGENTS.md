@@ -7,7 +7,7 @@ Keep each capability easy to find by responsibility:
 - `predict-vehicle-cd`: fast geometry-similarity Cd prediction from vehicle meshes.
 - `cad-surface-mesher`: target-driven CAD surface mesh audit and visual QA.
 - `mesh-repair`: automatic watertight surface mesh repair and diagnostics.
-- `cad-tessellation`: CAD import and tessellation embedding.
+- `cad-tessellation`: CAD/mesh surface conversion and tessellation embedding.
 
 ## Boundaries
 

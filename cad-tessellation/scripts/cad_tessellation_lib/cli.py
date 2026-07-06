@@ -16,7 +16,8 @@ def positive_float(value: str) -> float:
 
 
 def run_tessellate(args: argparse.Namespace) -> int:
-    from .gmsh_pipeline import TessellationControls, tessellate_cad
+    from .gmsh_pipeline import SUPPORTED_SUFFIXES, TessellationControls, TessellationError, tessellate_cad
+    from .mesh_pipeline import SUPPORTED_MESH_SUFFIXES, tessellate_mesh
 
     controls = TessellationControls(
         input_path=Path(args.input),
@@ -31,7 +32,18 @@ def run_tessellate(args: argparse.Namespace) -> int:
         import_labels=args.import_labels,
         save_debug_msh=args.save_debug_msh,
     )
-    result = tessellate_cad(controls)
+    suffix = controls.input_path.suffix.lower()
+    if controls.cad_format != "auto":
+        if suffix in SUPPORTED_MESH_SUFFIXES:
+            raise TessellationError("--format is only valid for CAD inputs; omit it for mesh inputs.")
+        result = tessellate_cad(controls)
+    elif suffix in SUPPORTED_SUFFIXES:
+        result = tessellate_cad(controls)
+    elif suffix in SUPPORTED_MESH_SUFFIXES:
+        result = tessellate_mesh(controls)
+    else:
+        supported = ", ".join(sorted((*SUPPORTED_SUFFIXES, *SUPPORTED_MESH_SUFFIXES)))
+        raise TessellationError(f"Cannot infer input format from {controls.input_path.name}; supported suffixes: {supported}")
     print(result.report_path)
     return 0
 
@@ -47,30 +59,33 @@ def run_smoke(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Convert STEP, IGES, or BREP CAD files into a triangle-only VTP surface mesh "
+            "Convert CAD or mesh inputs into a triangle-only VTP surface mesh "
             "with a JSON tessellation quality report."
         )
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    tessellate = sub.add_parser("tessellate", help="Tessellate one CAD file into surface_mesh.vtp.")
-    tessellate.add_argument("input", help="Input CAD file (.step, .stp, .iges, .igs, .brep, .brp).")
+    tessellate = sub.add_parser("tessellate", help="Convert one CAD or mesh file into surface_mesh.vtp.")
+    tessellate.add_argument(
+        "input",
+        help="Input CAD or mesh file (.step/.stp/.iges/.igs/.brep/.brp/.stl/.obj/.vtp/.vtk/.glb/.gltf).",
+    )
     tessellate.add_argument("--output-dir", required=True, help="Directory for surface_mesh.vtp and tessellation_report.json.")
-    tessellate.add_argument("--format", choices=("auto", "step", "iges", "brep"), default="auto")
-    tessellate.add_argument("--occ-target-unit", choices=("auto", "mm", "cm", "m"), default="auto")
-    tessellate.add_argument("--mesh-size", type=positive_float, help="Uniform target mesh size passed to Gmsh.")
-    tessellate.add_argument("--mesh-size-min", type=positive_float, help="Minimum Gmsh mesh size.")
-    tessellate.add_argument("--mesh-size-max", type=positive_float, help="Maximum Gmsh mesh size.")
-    tessellate.add_argument("--angle-deg", type=positive_float, default=20.0, help="Curvature angle control in degrees.")
+    tessellate.add_argument("--format", choices=("auto", "step", "iges", "brep"), default="auto", help="CAD input format override.")
+    tessellate.add_argument("--occ-target-unit", choices=("auto", "mm", "cm", "m"), default="auto", help="CAD/OCC unit target.")
+    tessellate.add_argument("--mesh-size", type=positive_float, help="CAD input only: uniform target mesh size passed to Gmsh.")
+    tessellate.add_argument("--mesh-size-min", type=positive_float, help="CAD input only: minimum Gmsh mesh size.")
+    tessellate.add_argument("--mesh-size-max", type=positive_float, help="CAD input only: maximum Gmsh mesh size.")
+    tessellate.add_argument("--angle-deg", type=positive_float, default=20.0, help="CAD input only: curvature angle control.")
     tessellate.add_argument(
         "--chord",
         type=positive_float,
-        help="Best-effort OCC chord/deflection hint. The report records its exact limitation.",
+        help="CAD input only: best-effort OCC chord/deflection hint.",
     )
     labels = tessellate.add_mutually_exclusive_group()
     labels.add_argument("--import-labels", dest="import_labels", action="store_true", default=True)
     labels.add_argument("--no-import-labels", dest="import_labels", action="store_false")
-    tessellate.add_argument("--save-debug-msh", action="store_true", help="Also save the raw Gmsh mesh as surface_mesh.msh.")
+    tessellate.add_argument("--save-debug-msh", action="store_true", help="CAD input only: also save raw Gmsh mesh as surface_mesh.msh.")
     tessellate.set_defaults(func=run_tessellate)
 
     smoke = sub.add_parser("smoke", help="Generate a synthetic STEP fixture and tessellate it end to end.")

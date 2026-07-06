@@ -7,7 +7,7 @@ Personal toolkit for CAD-to-watertight-surface meshing, repair planning, tessell
 - `predict-vehicle-cd`: estimate vehicle drag coefficient from a mesh using normalized side-view geometry similarity and a packaged public reference library.
 - `cad-surface-mesher`: audit CAD-derived vehicle surface meshes, generate target-driven visual checks, and prepare target-specific surface repair decisions.
 - `mesh-repair`: planned automatic watertight surface mesh repair operations, quality diagnostics, and repair artifacts.
-- `cad-tessellation`: convert STEP, IGES, or BREP CAD files to triangle-only VTP surface meshes with JSON quality and provenance reports.
+- `cad-tessellation`: convert CAD or mesh files to triangle-only VTP surface meshes with JSON quality and provenance reports.
 
 ## Current Usage
 
@@ -20,7 +20,7 @@ python scripts/vehicle_cd_similarity.py predict /path/to/car.vtp \
   --output-dir /tmp/cd_estimate
 ```
 
-Tessellate a CAD file into a downstream-consumable surface mesh:
+Tessellate a CAD or mesh file into a downstream-consumable surface mesh:
 
 ```bash
 python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step \
@@ -30,7 +30,14 @@ python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step
   --chord 0.005
 ```
 
-The tessellator writes `surface_mesh.vtp` and `tessellation_report.json`. The VTP stores triangle cell data for `gmsh_surface_tag`, `gmsh_parent_volume_tag`, and `gmsh_element_tag`, which downstream mesh audit and Cd prediction tools can inspect.
+Mesh inputs such as STL, OBJ, VTP, VTK, GLB, and GLTF are also accepted:
+
+```bash
+python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.glb \
+  --output-dir /tmp/mesh-surface
+```
+
+The tessellator writes `surface_mesh.vtp` and `tessellation_report.json`. CAD outputs store Gmsh cell provenance, while mesh outputs store post-triangulation `source_triangle_index`.
 
 Run the generated fixture smoke test:
 
