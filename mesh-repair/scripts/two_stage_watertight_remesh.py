@@ -31,11 +31,16 @@ VIEWS = [
     ViewSpec("bottom_minus_z", (0, 1), (0.0, 0.0, 1.0)),
 ]
 
+DEFAULT_REMOVE_NAME_REGEX = (
+    r"(^|[_:])int(ernal)?([_:]|$)|internal|interior|hidden|inside|cavity|"
+    r"carinternal|seat|dashboard|centerconsole|steeringwheel"
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Extract an exterior wall candidate from a mesh-only vehicle assembly, "
+            "Extract an exterior wall candidate from a mesh-only assembly, "
             "then voxel-remesh that candidate into a watertight surface."
         )
     )
@@ -46,8 +51,14 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help=(
             "Optional GLTF/GLB source with geometry names. When its flattened triangle count "
-            "matches the input, interior-name groups are removed before visibility extraction."
+            "matches the input, non-target groups are removed before visibility extraction."
         ),
+    )
+    parser.add_argument("--target-name", default="external-flow-skin")
+    parser.add_argument(
+        "--remove-name-regex",
+        default=DEFAULT_REMOVE_NAME_REGEX,
+        help="Case-insensitive group/geometry-name regex removed before visibility extraction.",
     )
     parser.add_argument("--visibility-grid", type=int, default=900)
     parser.add_argument("--depth-tolerance", type=float, default=0.02)
@@ -58,12 +69,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def gltf_group_keep_mask(gltf_path: Path, expected_faces: int) -> tuple[np.ndarray, dict[str, Any]]:
+def gltf_group_keep_mask(
+    gltf_path: Path,
+    expected_faces: int,
+    remove_name_regex: str,
+) -> tuple[np.ndarray, dict[str, Any]]:
     scene = trimesh.load(gltf_path, force="scene")
-    remove_pattern = re.compile(
-        r"(^|[_:])int([_:]|$)|carinternal|interior|seat|dashboard|centerconsole|steeringwheel",
-        re.IGNORECASE,
-    )
+    remove_pattern = re.compile(remove_name_regex, re.IGNORECASE)
     keep = np.ones(expected_faces, dtype=bool)
     cursor = 0
     removed_groups = []
@@ -215,7 +227,11 @@ def prepare_group_candidate(
     if not args.group_source_gltf:
         return candidate_indices, points, faces, None
 
-    group_keep, group_filter = gltf_group_keep_mask(args.group_source_gltf, faces.shape[0])
+    group_keep, group_filter = gltf_group_keep_mask(
+        args.group_source_gltf,
+        faces.shape[0],
+        args.remove_name_regex,
+    )
     candidate_indices = np.flatnonzero(group_keep)
     group_points, group_faces = compact_mesh(points, faces, candidate_indices)
     group_path = args.output_dir / "stage0_group_filtered.vtp"
@@ -250,10 +266,7 @@ def build_report(
     stage2_drift = bbox_drift_from_reports(stage_reports["stage1_exterior_candidate"], stage2)
     return {
         "input": {"path": str(args.input), "kind": "mesh", "group_metadata_available": group_filter is not None},
-        "target": {
-            "name": "external-aero-cfd-skin",
-            "opening_policy": "coarse voxel remesh caps unresolved openings in this prototype",
-        },
+        "target": {"name": args.target_name, "opening_policy": "unresolved openings are capped by coarse voxel remesh"},
         "parameters": parameters_report(args),
         "limitations": limitations(group_filter),
         "group_filter": group_filter,
@@ -274,12 +287,13 @@ def parameters_report(args: argparse.Namespace) -> dict[str, Any]:
         "depth_tolerance": args.depth_tolerance,
         "dilate_rings": args.dilate_rings,
         "voxel_pitch": args.voxel_pitch,
+        "remove_name_regex": args.remove_name_regex,
     }
 
 
 def limitations(group_filter: dict[str, Any] | None) -> list[str]:
     result = [
-        "Functional openings such as grille, intake, underbody, and wheel wells are not classified individually.",
+        "Target-specific functional openings and through-holes are not classified individually.",
         "Voxel remesh is a watertight coarse envelope, not a curvature-preserving final CFD surface.",
     ]
     if group_filter:

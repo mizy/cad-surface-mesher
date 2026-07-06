@@ -1,6 +1,6 @@
 # Mesh Repair
 
-Planned responsibility: repair vehicle surface meshes into watertight, inspectable artifacts suitable for downstream CAX/CAE preprocessing.
+Planned responsibility: repair target-specific surface meshes into watertight, inspectable artifacts suitable for downstream CAX/CAE preprocessing.
 
 Initial scope:
 
@@ -11,7 +11,7 @@ Initial scope:
 - write repaired mesh artifacts and a JSON report
 - keep units, coordinate convention, and provenance explicit
 
-Do not apply watertight remeshing to a full dirty vehicle assembly before removing interior, hidden, duplicate, or irrelevant components. For external CFD/CAE skins, the intermediate exterior wall candidate may be non-watertight; water-tightness is introduced only after the target wall set is known.
+Do not apply watertight remeshing to a full dirty assembly before removing interior, hidden, duplicate, or irrelevant components. For external-flow or CAX skins, the intermediate exterior wall candidate may be non-watertight; water-tightness is introduced only after the target wall set is known.
 
 ## Two-Stage Prototype
 
@@ -19,9 +19,11 @@ Run the local prototype on a mesh input:
 
 ```bash
 python mesh-repair/scripts/two_stage_watertight_remesh.py \
-  /path/to/vehicle.vtp \
+  /path/to/assembly.vtp \
   --group-source-gltf /path/to/scene.gltf \
-  --output-dir outputs/vehicle-two-stage \
+  --target-name external-flow-skin \
+  --remove-name-regex "internal|interior|hidden|cavity" \
+  --output-dir outputs/assembly-two-stage \
   --visibility-grid 900 \
   --depth-tolerance 0.0 \
   --dilate-rings 0 \
@@ -36,4 +38,6 @@ Outputs:
 - `two_stage_report.json`
 - depth preview PNGs under `visual/`
 
-The prototype uses GLTF geometry names to remove explicit interior groups, then keeps first-hit exterior candidates from six orthographic directions, then runs a voxel fill plus marching-cubes remesh. A `watertight_topology_pass` means boundary, non-manifold, and degenerate face checks pass. It is not the same as `engineering_pass`; final acceptance still requires visual opening-policy review, self-intersection checks, and target drift limits.
+The prototype uses GLTF geometry names to remove explicit non-target groups, then keeps first-hit exterior candidates from six orthographic directions, then runs a voxel fill plus marching-cubes remesh. A `watertight_topology_pass` means boundary, non-manifold, and degenerate face checks pass. It is not the same as `engineering_pass`; final acceptance still requires target-specific opening review, self-intersection checks, and target drift limits.
+
+For vehicles, `--remove-name-regex` can include `carInternal`, `seat`, `dashboard`, `centerConsole`, and `steeringWheel`. For other assemblies, provide domain-specific remove/keep naming rules before relying on geometry visibility.

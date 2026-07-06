@@ -1,11 +1,11 @@
 ---
 name: cad-surface-mesher
-description: Build and validate target-specific CAD surface meshes from CAD or vehicle mesh inputs. Use when Codex needs to convert CAD or mesh inputs to triangle-only surface meshes, remove interior vehicle parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal panel gaps, handle grille/opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce a surface mesh quality report for CFD/CAE preprocessing.
+description: Build and validate target-specific CAD surface meshes from CAD or mesh inputs. Use when Codex needs to convert CAD or mesh inputs to triangle-only surface meshes, remove non-target internal or hidden parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal target-specific gaps, handle opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce a surface mesh quality report for CFD/CAE preprocessing.
 ---
 
 # CAD Surface Mesher
 
-Create a target-specific CAD surface mesh, not a faithful full assembly mesh. The default target is an exterior aerodynamic skin for CFD/CAE preprocessing with explicit visibility, visual, and topology evidence.
+Create a target-specific CAD surface mesh, not a faithful full assembly mesh. The common default target is an exterior flow or analysis skin for CAX/CAE preprocessing with explicit visibility, visual, and topology evidence. Vehicles are only one target family.
 
 ## Core Rule
 
@@ -16,27 +16,28 @@ Use AI to classify and review visual evidence. Use deterministic geometry checks
 Start every task by writing or confirming the target policy:
 
 ```yaml
-target: external-aero-cfd-skin
+target: external-flow-skin
 remove:
-  cabin_interior: true
-  engine_bay_internals: true
+  non_target_internal_parts: true
   hidden_internal_faces: true
+  fixtures_supports_fasteners: ask
 seal:
-  panel_gaps: true
-  window_body_cracks: true
-  hood_trunk_door_seams: true
+  small_assembly_gaps: true
+  intentional_panel_gaps: target_specific
 openings:
-  grille: ask
-  cooling_intake: ask
-  wheel_well: keep
-  underbody: ask
+  functional_openings: ask
+  through_holes: ask
+refinement:
+  base_size_mm: 20
+  feature_size_mm: 5
+  curvature_sensitive: true
 limits:
   max_gap_fill_width_mm: 30
   max_surface_offset_mm: 5
   max_bbox_drift_ratio: 0.002
 ```
 
-If the user asks for simple external Cd triage, cap small panel gaps and ask before changing functional openings such as grilles, cooling intakes, wheel wells, underbody openings, and exhausts.
+If the user asks for simple external Cd triage, use the vehicle target policy. For non-vehicle assemblies, first define target-specific remove, keep, opening, and refinement rules.
 
 ## Workflow
 
@@ -67,7 +68,7 @@ Never watertight-remesh the full dirty assembly directly.
    - accept that this intermediate mesh may still have open boundaries, panel gaps, and functional openings
 2. Watertight remesh:
    - run remesh or hole sealing only on the exterior wall candidate set
-   - cap or preserve grille, intake, wheel-well, underbody, and exhaust openings according to target policy
+   - cap or preserve functional openings according to target policy
    - validate silhouette/bbox drift against the pre-remesh exterior wall, not the unfiltered assembly
 
 The first stage decides what surface should exist. The second stage makes that surface watertight.
@@ -75,14 +76,16 @@ The first stage decides what surface should exist. The second stage makes that s
 Use `mesh-repair/scripts/two_stage_watertight_remesh.py` for the current local prototype when only mesh inputs are available:
 
 ```bash
-python mesh-repair/scripts/two_stage_watertight_remesh.py /path/to/vehicle.vtp \
+python mesh-repair/scripts/two_stage_watertight_remesh.py /path/to/assembly.vtp \
   --group-source-gltf /path/to/scene.gltf \
-  --output-dir outputs/vehicle-two-stage \
+  --target-name external-flow-skin \
+  --remove-name-regex "internal|interior|hidden|cavity" \
+  --output-dir outputs/assembly-two-stage \
   --depth-tolerance 0.0 \
   --voxel-pitch 0.02
 ```
 
-When `--group-source-gltf` is supplied, the script first removes explicit interior geometry names such as `carInternal`, `INT_*`, seats, dashboard, center console, and steering wheel by flattened GLTF face ranges, then runs mesh-only exterior visibility. This assumes the GLTF flatten order matches the input triangle order; validate with screenshots and metrics.
+When `--group-source-gltf` is supplied, the script first removes names matching `--remove-name-regex` by flattened GLTF face ranges, then runs mesh-only exterior visibility. This assumes the GLTF flatten order matches the input triangle order; validate with screenshots and metrics. For vehicles the regex can include `carInternal`, `INT_*`, seats, dashboard, center console, and steering wheel. For other assemblies, use domain-specific names.
 
 Treat `watertight_topology_pass` as a narrow topology result only. Do not call the mesh engineering-ready until component count, volume reliability, self-intersection checks, visual opening policy, and bbox/silhouette drift all pass.
 
@@ -92,9 +95,9 @@ Prefer group-level decisions before body-level or face-level work. A human CAD c
 
 1. Build a normalized group table with `path`, `name`, `parent`, `children`, `aabb`, `area`, `volume`, `material`, `body_count`, and source IDs.
 2. Assign a weak semantic label from names and paths:
-   - likely remove: `interior`, `seat`, `dashboard`, `steering`, `trim`, `speaker`, `engine`, `battery`, `hvac`, `wire`, `bolt`, `fastener`, `bracket`, `suspension_internal`
-   - likely keep: `body`, `exterior`, `skin`, `panel`, `door`, `hood`, `trunk`, `bumper`, `glass`, `window`, `mirror`, `lamp`, `wheel`, `tire`, `grille`, `splitter`, `spoiler`, `wiper`, `sensor`
-3. Find large exterior-shell candidates from name, area, and bbox span. Use them as containment references, not the full vehicle bbox alone.
+   - likely remove: target-specific interior/hidden/service/fixture/fastener/support groups
+   - likely keep: target-specific exterior shell, walls, boundary surfaces, visible accessories, and required functional geometry
+3. Find large exterior-shell candidates from name, area, and bbox span. Use them as containment references, not the full assembly bbox alone.
 4. Mark a group as `internal_candidate` when its AABB is strictly contained inside an exterior-shell candidate with clearance, it has no exterior name token, and its projected silhouette contribution is small.
 5. Render A/B screenshots at group granularity:
    - baseline full assembly
@@ -104,7 +107,7 @@ Prefer group-level decisions before body-level or face-level work. A human CAD c
 6. Compare front, rear, left, right, top, bottom, and three-quarter views. Remove a group when hiding it has near-zero silhouette/visible-area delta; use AI to explain non-zero changed pixels, not to override a large exterior delta.
 7. If hiding a parent group changes exterior silhouette, recurse into children instead of deleting the parent.
 
-AABB containment is a speed filter, not proof. Do not delete mirrors, lights, tires, wheels, grilles, glass, aero add-ons, sensors, or underbody-visible parts from AABB containment alone.
+AABB containment is a speed filter, not proof. Do not delete small but target-visible functional parts from AABB containment alone.
 
 ## Exterior Wall Extraction
 
@@ -120,17 +123,17 @@ After group reduction, keep exterior wall surfaces before final meshing.
 
 For each boundary loop, classify the local situation before repair:
 
-- `seal_panel_gap`: hood, door, trunk, or window seam in external-aero mode.
+- `seal_panel_gap`: target-specific panel seam, such as hood, door, trunk, or window seams in vehicle external-aero mode.
 - `seal_cad_gap`: small assembly/tessellation gap under the configured width limit.
 - `remove_inner_sheet`: duplicate or hidden internal sheet behind the exterior skin.
-- `keep_separate`: true separated exterior components such as wheel/body gaps.
+- `keep_separate`: true separated exterior components such as wheel/body gaps or separate exposed assemblies.
 - `ask`: ambiguous functional opening or over-limit patch.
 
 Use boundary-loop distance, normal/curvature compatibility, and visual closeups together. Do not stitch duplicate inner and outer sheets together.
 
-## Grilles And Functional Openings
+## Functional Openings
 
-Treat grilles as policy openings, not ordinary holes.
+Treat target-specific functional openings as policy openings, not ordinary holes. Vehicle examples include grilles, cooling intakes, wheel wells, underbody openings, and exhausts.
 
 - `preserve`: use when modeling cooling flow or true internal ducting.
 - `cap`: use for simplified external-aero skin when internal flow is out of scope.
