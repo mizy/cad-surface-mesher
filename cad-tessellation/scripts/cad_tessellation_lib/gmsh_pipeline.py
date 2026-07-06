@@ -76,12 +76,12 @@ def load_runtime() -> RuntimeModules:
 
 
 def tessellate_cad(controls: TessellationControls) -> TessellationResult:
-    runtime = load_runtime()
     input_path = controls.input_path.expanduser().resolve()
     output_dir = controls.output_dir.expanduser().resolve()
     if not input_path.exists():
         raise TessellationError(f"Input CAD file does not exist: {input_path}")
     cad_format = resolve_cad_format(input_path, controls.cad_format)
+    runtime = load_runtime()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     gmsh = runtime.gmsh
