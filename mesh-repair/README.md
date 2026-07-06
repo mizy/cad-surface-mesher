@@ -2,6 +2,13 @@
 
 Planned responsibility: repair target-specific surface meshes into watertight, inspectable artifacts suitable for downstream CAX/CAE preprocessing.
 
+This module currently implements mesh-domain prototypes. The broader skill contract is:
+
+- CAD input -> watertight CAD output when CAD-domain healing/sewing/filling is requested
+- CAD input -> watertight mesh output when meshing is requested
+- mesh input -> watertight mesh output for the current local prototype
+- mesh input -> watertight CAD output only through explicit reverse surface fitting, with approximation loss reported
+
 Initial scope:
 
 - use a two-stage watertight flow: extract exterior wall surfaces first, then remesh/seal only that exterior candidate set

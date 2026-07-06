@@ -11,6 +11,24 @@ Create a target-specific CAD surface mesh, not a faithful full assembly mesh. Th
 
 Use AI to classify and review visual evidence. Use deterministic geometry checks to decide mesh quality. Do not claim success from screenshots alone.
 
+## I/O Contract
+
+The skill accepts two input families and can target two output families:
+
+```yaml
+input_kind: cad | mesh
+output_kind: watertight_cad | watertight_mesh
+```
+
+Supported pipeline meanings:
+
+- `cad -> watertight_cad`: repair in the CAD/BREP domain, including sewing, healing, gap filling, offsetting, trimming, and exporting STEP/BREP or another CAD format.
+- `cad -> watertight_mesh`: repair or reduce CAD faces as needed, then tessellate/remesh into a watertight analysis mesh.
+- `mesh -> watertight_mesh`: classify exterior source triangles, repair/remesh, and output a watertight mesh.
+- `mesh -> watertight_cad`: reverse surface fitting from mesh; this is a separate reconstruction mode and must report approximation loss. Do not present it as preserving original CAD.
+
+Every report must state `input_kind`, `output_kind`, output files, and whether the repair happened in CAD domain, mesh domain, or reverse-fitting domain.
+
 ## Target Policy
 
 Start every task by writing or confirming the target policy:

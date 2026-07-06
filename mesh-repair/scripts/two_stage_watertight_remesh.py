@@ -268,6 +268,12 @@ def build_report(
     stage2_drift = bbox_drift_from_reports(stage_reports["stage1_exterior_candidate"], stage2)
     return {
         "input": {"path": str(args.input), "kind": "mesh", "group_metadata_available": group_filter is not None},
+        "output_contract": {
+            "input_kind": "mesh",
+            "output_kind": "watertight_mesh",
+            "repair_domain": "mesh_domain_voxel_remesh",
+            "cad_output": {"supported": False, "reason": "this prototype does not perform reverse CAD fitting"},
+        },
         "target": {"name": args.target_name, "opening_policy": "unresolved openings are capped by coarse voxel remesh"},
         "parameters": parameters_report(args),
         "limitations": limitations(group_filter),

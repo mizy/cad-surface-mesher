@@ -443,6 +443,12 @@ def build_report(
     refined_metrics = mesh_report(refined_points, refined_faces)
     return {
         "input": str(args.source_mesh),
+        "output_contract": {
+            "input_kind": "mesh",
+            "output_kind": "refined_mesh_not_watertight",
+            "repair_domain": "source_mesh_refinement",
+            "cad_output": {"supported": False, "reason": "adaptive refinement does not perform CAD fitting"},
+        },
         "method": "depth_face_id_buffers_to_source_face_size_field_then_conforming_edge_split",
         "limitations": [
             "This prototype refines source triangles but does not coarsen already-dense non-critical source regions.",

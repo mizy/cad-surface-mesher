@@ -45,6 +45,8 @@ def summary_section(report: dict[str, Any]) -> str:
         rows.append(("Input", report["input"]))
     if "target" in report:
         rows.append(("Target", report["target"]))
+    if "output_contract" in report:
+        rows.append(("Output Contract", report["output_contract"]))
     if "method" in report:
         rows.append(("Method", report["method"]))
     if "gates" in report:
