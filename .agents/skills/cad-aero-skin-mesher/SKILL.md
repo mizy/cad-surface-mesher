@@ -1,11 +1,11 @@
 ---
 name: cad-aero-skin-mesher
-description: Build and validate exterior aerodynamic surface meshes from CAD or vehicle mesh inputs. Use when Codex needs to tessellate CAD, remove interior vehicle parts, seal panel gaps, handle grille/opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce an aero-skin mesh quality report for CFD/CAE preprocessing.
+description: Build and validate exterior aerodynamic surface meshes from CAD or vehicle mesh inputs. Use when Codex needs to tessellate CAD, remove interior vehicle parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal panel gaps, handle grille/opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce an aero-skin mesh quality report for CFD/CAE preprocessing.
 ---
 
 # CAD Aero Skin Mesher
 
-Create an exterior aerodynamic skin, not a faithful full assembly mesh. The target is a CFD/CAE-ready surface mesh with explicit visual and topology evidence.
+Create an exterior aerodynamic skin, not a faithful full assembly mesh. The target is a CFD/CAE-ready surface mesh with explicit visibility, visual, and topology evidence.
 
 ## Core Rule
 
@@ -40,9 +40,11 @@ If the user asks for simple external Cd triage, cap small panel gaps and ask bef
 
 ## Workflow
 
-1. Tessellate CAD or load the input mesh with face/body IDs when available.
-2. Generate deterministic audit metrics and target-driven screenshots.
-3. Run separate AI visual checks for each goal:
+1. Load CAD assembly metadata before meshing when available: group tree, names, layers, colors/materials, body IDs, face IDs, transforms, and bounding boxes.
+2. Reduce the assembly at group level first with the visibility workflow below.
+3. Keep only exterior wall candidates, then tessellate or remesh those surfaces with face/body provenance preserved.
+4. Generate deterministic audit metrics and target-driven screenshots.
+5. Run separate AI visual checks for each goal:
    - exterior skin completeness
    - interior part residue
    - panel gap sealing
@@ -50,10 +52,40 @@ If the user asks for simple external Cd triage, cap small panel gaps and ask bef
    - exterior feature preservation
    - patch artifacts
    - silhouette drift
-4. Convert visual findings into a repair plan.
-5. Apply one deterministic repair step at a time.
-6. Re-audit and regenerate screenshots after each repair.
-7. Stop when validators pass or when policy/tolerance limits require user confirmation.
+6. Convert visual findings into a repair plan.
+7. Apply one deterministic repair step at a time.
+8. Re-audit and regenerate screenshots after each repair.
+9. Stop when validators pass or when policy/tolerance limits require user confirmation.
+
+## Group Visibility Workflow
+
+Prefer group-level decisions before body-level or face-level work. A human CAD cleanup usually starts by hiding named assembly groups and checking whether the exterior changed; follow that pattern.
+
+1. Build a normalized group table with `path`, `name`, `parent`, `children`, `aabb`, `area`, `volume`, `material`, `body_count`, and source IDs.
+2. Assign a weak semantic label from names and paths:
+   - likely remove: `interior`, `seat`, `dashboard`, `steering`, `trim`, `speaker`, `engine`, `battery`, `hvac`, `wire`, `bolt`, `fastener`, `bracket`, `suspension_internal`
+   - likely keep: `body`, `exterior`, `skin`, `panel`, `door`, `hood`, `trunk`, `bumper`, `glass`, `window`, `mirror`, `lamp`, `wheel`, `tire`, `grille`, `splitter`, `spoiler`, `wiper`, `sensor`
+3. Find large exterior-shell candidates from name, area, and bbox span. Use them as containment references, not the full vehicle bbox alone.
+4. Mark a group as `internal_candidate` when its AABB is strictly contained inside an exterior-shell candidate with clearance, it has no exterior name token, and its projected silhouette contribution is small.
+5. Render A/B screenshots at group granularity:
+   - baseline full assembly
+   - hide each candidate group or candidate parent group
+   - only exterior-shell candidates
+   - removed-candidate overlay
+6. Compare front, rear, left, right, top, bottom, and three-quarter views. Remove a group when hiding it has near-zero silhouette/visible-area delta; use AI to explain non-zero changed pixels, not to override a large exterior delta.
+7. If hiding a parent group changes exterior silhouette, recurse into children instead of deleting the parent.
+
+AABB containment is a speed filter, not proof. Do not delete mirrors, lights, tires, wheels, grilles, glass, aero add-ons, sensors, or underbody-visible parts from AABB containment alone.
+
+## Exterior Wall Extraction
+
+After group reduction, keep exterior wall surfaces before final meshing.
+
+- Prefer original CAD faces marked as exterior by group visibility and exterior-name evidence.
+- When only mesh geometry is available, ray-cast from outside views and keep the first surface hit along each ray; use this as an outermost-wall score per face/body.
+- Remove duplicate inner sheets only when they sit behind an exterior sheet with similar normals/curvature and no exterior visibility.
+- Preserve face/body IDs through tessellation so later patches can report their source.
+- Mesh the reduced exterior wall set, then repair gaps and openings according to target policy.
 
 ## Two-Face Gaps
 
@@ -107,4 +139,3 @@ The script writes:
 - `surface_mesh_quality.json`
 - multi-view depth/normal/boundary-overlay PNGs
 - `visual_checks.json` with separate AI inspection prompts
-
