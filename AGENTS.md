@@ -1,6 +1,6 @@
 # Code Principles
 
-## Core Goal: Vehicle CAX Tools
+## Core Goal: CAD Surface Meshing
 
 Keep each capability easy to find by responsibility:
 
@@ -27,6 +27,6 @@ Keep each capability easy to find by responsibility:
 ## Style
 
 - Keep scripts direct and inspectable.
-- Use clear names such as `predict-vehicle-cd`, `mesh-repair`, `cad-tessellation`, `assets`, `references`, and `scripts`.
+- Use clear names such as `cad-surface-mesher`, `predict-vehicle-cd`, `mesh-repair`, `cad-tessellation`, `assets`, `references`, and `scripts`.
 - Avoid wrapper layers that only rename or forward calls.
 - Document assumptions around units, axes, mesh validity, and output quality.

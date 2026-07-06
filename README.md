@@ -1,6 +1,6 @@
-# Vehicle CAX Toolkit
+# CAD Surface Mesher
 
-Personal toolkit for vehicle CAX/CAE preprocessing and fast geometry analysis.
+Personal toolkit for CAD-to-watertight-surface meshing, repair planning, tessellation, and fast vehicle geometry analysis.
 
 ## Capabilities
 
