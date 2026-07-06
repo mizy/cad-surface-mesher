@@ -9,10 +9,10 @@ Estimate Cd from a 3D vehicle mesh with the packaged side-view reference library
 
 ## Quick Start
 
-From the repository root, run the standalone predictor from this feature directory:
+From the repository root, run the standalone predictor from this skill directory:
 
 ```bash
-cd predict-vehicle-cd
+cd .agents/skills/predict-vehicle-cd
 python scripts/vehicle_cd_similarity.py predict /path/to/car.vtp \
   --library assets/reference-library/reference_cars.json \
   --category pickup \

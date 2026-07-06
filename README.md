@@ -11,22 +11,22 @@ Personal toolkit for vehicle CAX/CAE preprocessing and fast geometry analysis.
 
 ## Current Usage
 
-Run the migrated Cd predictor from the feature directory:
+Run the migrated Cd predictor from its agent skill directory:
 
 ```bash
-cd predict-vehicle-cd
+cd .agents/skills/predict-vehicle-cd
 python scripts/vehicle_cd_similarity.py predict /path/to/car.vtp \
   --library assets/reference-library/reference_cars.json \
   --output-dir /tmp/cd_estimate
 ```
 
-The same capability is exposed as an agent skill through:
+Agent skills live under:
 
 ```text
-.agents/skills/predict-vehicle-cd
+.agents/skills/<skill-name>
 ```
 
-That path is a symlink to the top-level `predict-vehicle-cd` feature so the implementation has one source of truth.
+Each skill owns its `SKILL.md`, scripts, references, and bundled assets there.
 
 ## Dependencies
 
@@ -41,10 +41,9 @@ Optional `trimesh` support improves GLB/GLTF loading.
 ## Repository Layout
 
 ```text
-predict-vehicle-cd/   Cd prediction feature, skill docs, scripts, and reference library
-cad-aero-skin-mesher/ Aero-skin meshing skill, audit script, and visual QA prompts
-mesh-repair/          Planned watertight surface mesh repair feature
-cad-tessellation/     Planned CAD tessellation embedding feature
-docs/                 Roadmap and cross-feature notes
-.agents/skills/       Agent skill entrypoints
+.agents/skills/predict-vehicle-cd/   Cd prediction skill, scripts, and reference library
+.agents/skills/cad-aero-skin-mesher/ Aero-skin meshing skill, audit script, and visual QA prompts
+mesh-repair/                       Planned watertight surface mesh repair feature
+cad-tessellation/                  Planned CAD tessellation embedding feature
+docs/                              Roadmap and cross-feature notes
 ```

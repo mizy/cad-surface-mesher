@@ -22,6 +22,7 @@ Keep each capability easy to find by responsibility:
 - A feature owns its assets, scripts, references, generated examples, and validation notes.
 - Shared utilities should be introduced only when at least two real features need them.
 - Keep generated caches, mesh outputs, screenshots, and temporary reports out of git unless they are intentional fixtures.
+- Agent skills live under `.agents/skills/<skill-name>` and own their scripts, references, assets, and `SKILL.md` there.
 
 ## Style
 
