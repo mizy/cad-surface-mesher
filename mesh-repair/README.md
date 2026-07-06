@@ -72,3 +72,15 @@ python mesh-repair/scripts/adaptive_depth_refine.py \
 ```
 
 This writes `refinement_field.vtp`, `adaptive_refined_source.vtp`, per-view critical-pixel PNGs, and `adaptive_refinement_report.json`. The script refines source triangles conformingly; it does not coarsen already-dense source areas and does not seal the mesh by itself.
+
+## Report Contract
+
+Repair outputs must include a JSON report with:
+
+- `geometry_to_mesh_trace`: original, group filter, exterior candidate, refinement, repair, sealing, and final mesh stages
+- `change_summary`: removed, refined, offset, sealed, capped, filled, or regenerated regions
+- `defect_matrix`: before/after free edges, non-manifold/shared edges, degenerate faces, components, volume reliability, and leak checks
+- `requested_capabilities`: part self gaps, between-part gaps, free edges, overlaps, normal inconsistency, micro holes, common edges, target-specific offsets such as front-bumper CAS offset
+- explicit `not_implemented` or `not_individually_classified` entries for anything the script did not truly check or repair
+
+The current prototypes report implicit voxel closure separately from per-gap classification. They must not claim overlap repair, normal repair, CAS offset, or source-loop hole inventory until those detectors and repair steps exist.

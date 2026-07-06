@@ -12,6 +12,7 @@ from PIL import Image
 
 from mesh_io import grid_shape, read_surface, triangle_faces, write_vtp
 from mesh_metrics import mesh_report
+from repair_report import adaptive_refinement_change_report
 
 
 @dataclass(frozen=True)
@@ -434,6 +435,8 @@ def build_report(
     size_report: dict[str, Any],
     refine_reports: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    source_metrics = mesh_report(points, faces)
+    refined_metrics = mesh_report(refined_points, refined_faces)
     return {
         "input": str(args.source_mesh),
         "method": "depth_face_id_buffers_to_source_face_size_field_then_conforming_edge_split",
@@ -445,8 +448,9 @@ def build_report(
         "view_reports": view_reports,
         "size_field": size_report,
         "refinement_iterations": refine_reports,
-        "source_metrics": mesh_report(points, faces),
-        "refined_metrics": mesh_report(refined_points, refined_faces),
+        "source_metrics": source_metrics,
+        "refined_metrics": refined_metrics,
+        "change_report": adaptive_refinement_change_report(source_metrics, refined_metrics, size_report),
     }
 
 

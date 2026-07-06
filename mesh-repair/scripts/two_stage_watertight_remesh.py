@@ -13,6 +13,7 @@ import trimesh
 
 from mesh_io import compact_mesh, grid_shape, read_surface, save_depth_preview, triangle_faces, write_vtp
 from mesh_metrics import bbox_drift_from_reports, mesh_report
+from repair_report import two_stage_repair_report
 
 
 @dataclass(frozen=True)
@@ -275,6 +276,7 @@ def build_report(
             "stage1_exterior_candidate": {**stage_reports["stage1_exterior_candidate"], "extraction": extraction},
             "stage2_watertight_remesh": {**stage2, "remesh": remesh},
         },
+        "repair_report": two_stage_repair_report(stage_reports, extraction, group_filter, remesh),
         "comparisons": {"stage1_vs_original": stage1_drift, "stage2_vs_stage1": stage2_drift},
         "gates": gates_report(extraction, stage2_topology, stage2_quality, stage2, closed_manifold_pass, single_volume_pass, stage2_drift),
         "outputs": outputs,

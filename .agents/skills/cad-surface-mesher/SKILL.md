@@ -197,6 +197,22 @@ Report these metrics every time:
 
 A final engineering pass requires all required metrics to be present. Missing metrics are not a pass.
 
+## Required Final Report
+
+Every completed meshing or repair run must write a JSON report alongside mesh outputs. The report must be detailed enough to audit how geometry became a watertight or refined mesh.
+
+Required sections:
+
+- `geometry_to_mesh_trace`: ordered stages from original geometry through group filtering, exterior extraction, refinement, repair, sealing, and final mesh.
+- `change_summary`: what was removed, retained, refined, offset, sealed, capped, filled, or regenerated.
+- `defect_matrix`: before/after counts for free/boundary edges, non-manifold/shared-edge issues, degenerate faces, components, volume reliability, and leak checks.
+- `requested_capabilities`: explicit status for part self gaps, between-part gaps, free edges, overlapping faces, inconsistent normals, micro holes, common/shared edges, source-loop holes, and target-specific operations such as front-bumper CAS offset.
+- `not_individually_classified` and `not_implemented`: anything not actually classified, checked, or repaired must be named explicitly.
+- `visual_artifacts`: depth, face-id, critical-region, boundary, normal, and before/after screenshots needed for inspection.
+- `provenance`: source face/body/group IDs or best available import-session IDs for removed, refined, filled, or capped regions.
+
+Do not claim a gap, overlap, normal issue, CAS offset, or hole was repaired unless the report identifies the method, scope, before/after evidence, and output region/provenance.
+
 ## Bundled Tool
 
 From the repository root, use `cad-tessellation/scripts/cad_tessellate.py` first when a CAD or mesh input must be converted to a triangle-only surface mesh:
