@@ -73,6 +73,20 @@ Never watertight-remesh the full dirty assembly directly.
 
 The first stage decides what surface should exist. The second stage makes that surface watertight.
 
+## Adaptive Refinement Source Rule
+
+Do not refine from the coarse watertight shell as the geometric source. The coarse shell may provide topology, inside/outside classification, and a repair scaffold, but it has already discarded source detail.
+
+Adaptive refinement must sample or project against the original CAD faces or the Stage 1 exterior wall candidate:
+
+- build the target size field from original/source curvature, feature edges, openings, names, materials, and visibility evidence
+- keep coarse sizes on non-critical source regions
+- place refined vertices against source exterior geometry, not against the voxelized shell
+- use the coarse watertight shell only to preserve closure, guide hole caps, or validate side consistency
+- report local source-to-output drift for each critical region
+
+If source geometry is unavailable and only a coarse shell remains, report the result as topology-only reconstruction, not source-faithful adaptive meshing.
+
 Use `mesh-repair/scripts/two_stage_watertight_remesh.py` for the current local prototype when only mesh inputs are available:
 
 ```bash

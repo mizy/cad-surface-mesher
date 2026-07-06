@@ -41,3 +41,16 @@ Outputs:
 The prototype uses GLTF geometry names to remove explicit non-target groups, then keeps first-hit exterior candidates from six orthographic directions, then runs a voxel fill plus marching-cubes remesh. A `watertight_topology_pass` means boundary, non-manifold, and degenerate face checks pass. It is not the same as `engineering_pass`; final acceptance still requires target-specific opening review, self-intersection checks, and target drift limits.
 
 For vehicles, `--remove-name-regex` can include `carInternal`, `seat`, `dashboard`, `centerConsole`, and `steeringWheel`. For other assemblies, provide domain-specific remove/keep naming rules before relying on geometry visibility.
+
+## Adaptive Refinement
+
+Adaptive refinement must use the original model or `stage1_exterior_candidate.vtp` as the geometric source. Do not subdivide a coarse watertight shell and treat that as recovered detail; the shell has already lost source information.
+
+The intended flow is:
+
+1. classify the target exterior on the original assembly or Stage 1 candidate
+2. build a target size field from source curvature, feature edges, openings, materials, names, and visibility evidence
+3. keep coarse cells in low-detail source regions
+4. refine critical regions directly against the source exterior geometry
+5. use the coarse watertight shell only as topology/closure guidance
+6. report source-to-output drift per critical region
