@@ -13,6 +13,7 @@ import trimesh
 
 from mesh_io import compact_mesh, grid_shape, read_surface, save_depth_preview, triangle_faces, write_vtp
 from mesh_metrics import bbox_drift_from_reports, mesh_report
+from html_report import write_html_report
 from repair_report import two_stage_repair_report
 
 
@@ -377,8 +378,11 @@ def main() -> int:
         outputs,
         group_filter,
     )
+    html_path = args.output_dir / "two_stage_report.html"
+    report["outputs"]["html_report"] = str(html_path)
     report_path = args.output_dir / "two_stage_report.json"
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    write_html_report(report, html_path, "Two Stage Watertight Mesh Report")
     print_summary(report_path, stage1_report, stage2_report, report)
     return 0
 

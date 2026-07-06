@@ -199,7 +199,7 @@ A final engineering pass requires all required metrics to be present. Missing me
 
 ## Required Final Report
 
-Every completed meshing or repair run must write a JSON report alongside mesh outputs. The report must be detailed enough to audit how geometry became a watertight or refined mesh.
+Every completed meshing or repair run must write an HTML report alongside mesh outputs, with a JSON report as the machine-readable companion. The report must be detailed enough to audit how geometry became a watertight or refined mesh.
 
 Required sections:
 

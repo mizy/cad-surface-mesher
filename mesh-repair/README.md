@@ -75,7 +75,7 @@ This writes `refinement_field.vtp`, `adaptive_refined_source.vtp`, per-view crit
 
 ## Report Contract
 
-Repair outputs must include a JSON report with:
+Repair outputs must include an HTML report and a machine-readable JSON report with:
 
 - `geometry_to_mesh_trace`: original, group filter, exterior candidate, refinement, repair, sealing, and final mesh stages
 - `change_summary`: removed, refined, offset, sealed, capped, filled, or regenerated regions
@@ -84,3 +84,8 @@ Repair outputs must include a JSON report with:
 - explicit `not_implemented` or `not_individually_classified` entries for anything the script did not truly check or repair
 
 The current prototypes report implicit voxel closure separately from per-gap classification. They must not claim overlap repair, normal repair, CAS offset, or source-loop hole inventory until those detectors and repair steps exist.
+
+Current report files:
+
+- `two_stage_report.html` plus `two_stage_report.json`
+- `adaptive_refinement_report.html` plus `adaptive_refinement_report.json`

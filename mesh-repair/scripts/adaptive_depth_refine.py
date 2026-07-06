@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
+from html_report import write_html_report
 from mesh_io import grid_shape, read_surface, triangle_faces, write_vtp
 from mesh_metrics import mesh_report
 from repair_report import adaptive_refinement_change_report
@@ -419,8 +420,11 @@ def main() -> int:
     write_vtp(refined_path, refined_points, refined_faces, cell_data)
     report = build_report(args, points, faces, refined_points, refined_faces, view_reports, size_report, refine_reports)
     report["outputs"] = {"refinement_field_vtp": str(field_path), "adaptive_refined_source_vtp": str(refined_path)}
+    html_path = args.output_dir / "adaptive_refinement_report.html"
+    report["outputs"]["html_report"] = str(html_path)
     report_path = args.output_dir / "adaptive_refinement_report.json"
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    write_html_report(report, html_path, "Adaptive Depth Refinement Report")
     print(json.dumps(summary(report_path, report), indent=2))
     return 0
 
