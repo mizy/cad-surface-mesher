@@ -12,7 +12,7 @@ import numpy as np
 import trimesh
 
 from mesh_io import compact_mesh, grid_shape, read_surface, save_depth_preview, triangle_faces, write_vtp
-from mesh_metrics import bbox_drift_from_reports, mesh_report
+from mesh_metrics import bbox_drift_from_reports, mesh_report, silhouette_drift_from_meshes
 from html_report import write_html_report
 from repair_report import two_stage_repair_report
 
@@ -254,6 +254,7 @@ def build_report(
     remesh: dict[str, Any],
     outputs: dict[str, Any],
     group_filter: dict[str, Any] | None,
+    visual_drift: dict[str, Any],
 ) -> dict[str, Any]:
     stage2 = stage_reports["stage2_watertight_remesh"]
     stage2_topology = stage2["topology"]
@@ -284,8 +285,21 @@ def build_report(
             "stage2_watertight_remesh": {**stage2, "remesh": remesh},
         },
         "repair_report": two_stage_repair_report(stage_reports, extraction, group_filter, remesh),
-        "comparisons": {"stage1_vs_original": stage1_drift, "stage2_vs_stage1": stage2_drift},
-        "gates": gates_report(extraction, stage2_topology, stage2_quality, stage2, closed_manifold_pass, single_volume_pass, stage2_drift),
+        "comparisons": {
+            "stage1_vs_original": stage1_drift,
+            "stage2_vs_stage1": stage2_drift,
+            "stage2_silhouette_vs_stage1": visual_drift,
+        },
+        "gates": gates_report(
+            extraction,
+            stage2_topology,
+            stage2_quality,
+            stage2,
+            closed_manifold_pass,
+            single_volume_pass,
+            stage2_drift,
+            visual_drift,
+        ),
         "outputs": outputs,
     }
 
@@ -304,6 +318,7 @@ def limitations(group_filter: dict[str, Any] | None) -> list[str]:
     result = [
         "Target-specific functional openings and through-holes are not classified individually.",
         "Voxel remesh is a watertight coarse envelope, not a curvature-preserving final CFD surface.",
+        "Stage2 visual preservation is checked by shared-projection silhouette drift; high drift rejects voxel output as a final geometry.",
     ]
     if group_filter:
         result.append("Group filtering assumes the GLTF geometry flatten order matches the input mesh triangle order.")
@@ -323,7 +338,11 @@ def gates_report(
     closed_manifold_pass: bool,
     single_volume_pass: bool,
     drift: dict[str, Any],
+    visual_drift: dict[str, Any],
 ) -> dict[str, Any]:
+    bbox_pass = drift["max_ratio"] <= 0.002
+    silhouette_pass = visual_drift["summary"]["changed_ratio_max"] <= 0.05
+    automated_geometry_pass = closed_manifold_pass and single_volume_pass and bbox_pass and silhouette_pass
     return {
         "stage1_removed_internal_or_hidden_triangle_ratio": extraction["removed_triangle_ratio"],
         "watertight_topology_pass": closed_manifold_pass,
@@ -332,11 +351,15 @@ def gates_report(
         "stage2_non_manifold_edges_zero": topology["non_manifold_edges"] == 0,
         "stage2_degenerate_faces_zero": quality["degenerate_faces"] == 0,
         "stage2_volume_reliable": stage2["volume"]["reliable"],
-        "stage2_bbox_drift_within_default_0_002": drift["max_ratio"] <= 0.002,
+        "stage2_bbox_drift_within_default_0_002": bbox_pass,
+        "stage2_silhouette_changed_ratio_max": visual_drift["summary"]["changed_ratio_max"],
+        "stage2_silhouette_drift_within_default_0_05": silhouette_pass,
+        "automated_geometry_preservation_pass": automated_geometry_pass,
         "engineering_pass": False,
         "engineering_pass_reason": (
             "This prototype only proves watertight topology. Final engineering pass still requires "
-            "self-intersection checks, visual opening-policy review, and drift within target tolerance."
+            "self-intersection checks, visual opening-policy review, and drift within target tolerance. "
+            "High silhouette drift means the voxel output is a closure proxy, not an accepted final geometry."
         ),
     }
 
@@ -368,6 +391,14 @@ def main() -> int:
     stage2_path = args.output_dir / "stage2_watertight_surface.vtp"
     write_vtp(stage2_path, stage2_points, stage2_faces)
     stage2_report = mesh_report(stage2_points, stage2_faces)
+    visual_drift = silhouette_drift_from_meshes(
+        stage1_points,
+        stage1_faces,
+        stage2_points,
+        stage2_faces,
+        [VIEWS[0], VIEWS[2], VIEWS[4]],
+        max_size=min(args.visibility_grid, 720),
+    )
 
     previews = write_previews(args, stage1_points, stage1_faces, stage2_points, stage2_faces)
     extraction = extraction_report(view_reports, visible_score, stage1_indices, faces)
@@ -383,6 +414,7 @@ def main() -> int:
         remesh_report,
         outputs,
         group_filter,
+        visual_drift,
     )
     html_path = args.output_dir / "two_stage_report.html"
     report["outputs"]["html_report"] = str(html_path)

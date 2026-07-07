@@ -47,6 +47,8 @@ Outputs:
 
 The prototype uses GLTF geometry names to remove explicit non-target groups, then keeps first-hit exterior candidates from six orthographic directions, then runs a voxel fill plus marching-cubes remesh. A `watertight_topology_pass` means boundary, non-manifold, and degenerate face checks pass. It is not the same as `engineering_pass`; final acceptance still requires target-specific opening review, self-intersection checks, and target drift limits.
 
+Voxel output must also pass shared-projection silhouette drift against Stage 1. If the voxel remesh caps wheel wells, underbody detail, functional openings, or other high-area features, `stage2_silhouette_drift_within_default_0_05` fails and the output is only a closure proxy, not accepted final geometry.
+
 For vehicles, `--remove-name-regex` can include `carInternal`, `seat`, `dashboard`, `centerConsole`, and `steeringWheel`. For other assemblies, provide domain-specific remove/keep naming rules before relying on geometry visibility.
 
 ## Adaptive Refinement
@@ -103,6 +105,7 @@ Repair outputs must include an HTML report and a machine-readable JSON report wi
 - `change_summary`: removed, refined, offset, sealed, capped, filled, or regenerated regions
 - `defect_matrix`: before/after free edges, non-manifold/shared edges, degenerate faces, components, volume reliability, and leak checks
 - `requested_capabilities`: part self gaps, between-part gaps, free edges, overlaps, normal inconsistency, micro holes, common edges, target-specific offsets such as front-bumper CAS offset
+- `comparisons.stage2_silhouette_vs_stage1`: shared-projection visual drift so voxelized outputs that visibly diverge from the source candidate are rejected
 - explicit `not_implemented` or `not_individually_classified` entries for anything the script did not truly check or repair
 
 The current prototypes report implicit voxel closure separately from per-gap classification. They must not claim overlap repair, normal repair, CAS offset, or source-loop hole inventory until those detectors and repair steps exist.

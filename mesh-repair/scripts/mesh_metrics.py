@@ -158,3 +158,109 @@ def bbox_drift_from_reports(reference: dict[str, Any], candidate: dict[str, Any]
         "max_abs": max_abs,
         "max_ratio": float(max_abs / np.max(ref_extents)),
     }
+
+
+def silhouette_drift_from_meshes(
+    reference_points: np.ndarray,
+    reference_faces: np.ndarray,
+    candidate_points: np.ndarray,
+    candidate_faces: np.ndarray,
+    views: list[Any],
+    *,
+    max_size: int = 720,
+) -> dict[str, Any]:
+    per_view = {}
+    for view in views:
+        reference_mask, candidate_mask = silhouette_masks(
+            reference_points,
+            reference_faces,
+            candidate_points,
+            candidate_faces,
+            view,
+            max_size=max_size,
+        )
+        per_view[view.name] = silhouette_mask_drift(reference_mask, candidate_mask)
+
+    return {
+        "method": "shared_projection_silhouette_occupancy",
+        "grid_max_size": max_size,
+        "per_view": per_view,
+        "summary": {
+            "reference_only_ratio_max": max(row["reference_only_ratio_of_union"] for row in per_view.values()),
+            "candidate_only_ratio_max": max(row["candidate_only_ratio_of_union"] for row in per_view.values()),
+            "changed_ratio_max": max(row["changed_ratio_of_union"] for row in per_view.values()),
+            "overlap_ratio_min": min(row["overlap_ratio_of_union"] for row in per_view.values()),
+        },
+    }
+
+
+def silhouette_masks(
+    reference_points: np.ndarray,
+    reference_faces: np.ndarray,
+    candidate_points: np.ndarray,
+    candidate_faces: np.ndarray,
+    view: Any,
+    *,
+    max_size: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    reference_centroids = reference_points[reference_faces].mean(axis=1)
+    candidate_centroids = candidate_points[candidate_faces].mean(axis=1)
+    all_coords = np.vstack([
+        reference_centroids[:, view.project_axes],
+        candidate_centroids[:, view.project_axes],
+    ])
+    rows, cols, mins, spans = projection_grid(all_coords, max_size)
+    return (
+        silhouette_mask(reference_centroids, view, rows, cols, mins, spans),
+        silhouette_mask(candidate_centroids, view, rows, cols, mins, spans),
+    )
+
+
+def projection_grid(coords: np.ndarray, max_size: int) -> tuple[int, int, np.ndarray, np.ndarray]:
+    mins = coords.min(axis=0)
+    spans = np.maximum(coords.max(axis=0) - mins, 1e-12)
+    if spans[0] >= spans[1]:
+        cols = max_size
+        rows = max(64, int(round(max_size * spans[1] / spans[0])))
+    else:
+        rows = max_size
+        cols = max(64, int(round(max_size * spans[0] / spans[1])))
+    return rows, cols, mins, spans
+
+
+def silhouette_mask(
+    centroids: np.ndarray,
+    view: Any,
+    rows: int,
+    cols: int,
+    mins: np.ndarray,
+    spans: np.ndarray,
+) -> np.ndarray:
+    coords = centroids[:, view.project_axes]
+    uv = np.clip((coords - mins) / spans, 0.0, 1.0)
+    col = np.minimum((uv[:, 0] * cols).astype(np.int64), cols - 1)
+    row = np.minimum((uv[:, 1] * rows).astype(np.int64), rows - 1)
+    mask = np.zeros(rows * cols, dtype=bool)
+    mask[row * cols + col] = True
+    return mask.reshape(rows, cols)
+
+
+def silhouette_mask_drift(reference: np.ndarray, candidate: np.ndarray) -> dict[str, Any]:
+    both = reference & candidate
+    reference_only = reference & ~candidate
+    candidate_only = candidate & ~reference
+    union = int(np.count_nonzero(reference | candidate))
+    reference_only_count = int(np.count_nonzero(reference_only))
+    candidate_only_count = int(np.count_nonzero(candidate_only))
+    overlap_count = int(np.count_nonzero(both))
+    return {
+        "reference_pixels": int(np.count_nonzero(reference)),
+        "candidate_pixels": int(np.count_nonzero(candidate)),
+        "overlap_pixels": overlap_count,
+        "reference_only_pixels": reference_only_count,
+        "candidate_only_pixels": candidate_only_count,
+        "reference_only_ratio_of_union": float(reference_only_count / max(union, 1)),
+        "candidate_only_ratio_of_union": float(candidate_only_count / max(union, 1)),
+        "changed_ratio_of_union": float((reference_only_count + candidate_only_count) / max(union, 1)),
+        "overlap_ratio_of_union": float(overlap_count / max(union, 1)),
+    }
