@@ -15,7 +15,6 @@ from mesh_io import read_surface, triangle_faces
 
 
 VTK_JS_URL = "https://unpkg.com/vtk.js@latest/vtk.js"
-DEFAULT_MAX_VIEWER_TRIANGLES = 250_000
 
 
 def write_html_report(report: dict[str, Any], path: Path, title: str) -> None:
@@ -172,11 +171,23 @@ def viewer_section(preview_meshes: list[dict[str, Any]]) -> str:
                 "<div>",
                 f"<h3>{text(mesh['label'])}</h3>",
                 f'<div class="vtk-viewer" id="vtk-viewer-{index}"></div>',
-                f"<p class=\"muted\">Preview triangles: {mesh['triangles']}; source: {text(mesh['source'])}</p>",
+                viewer_mesh_caption(mesh),
                 "</div>",
             ])
         )
     return section("3D Before / After", '<div class="viewer-grid">' + "\n".join(cards) + "</div>")
+
+
+def viewer_mesh_caption(mesh: dict[str, Any]) -> str:
+    parts = [
+        f"Displayed triangles: {mesh['triangles']}",
+        f"Original triangles: {mesh['original_triangles']}",
+        f"Full resolution: {str(mesh['full_resolution']).lower()}",
+    ]
+    if mesh.get("viewer_triangle_limit"):
+        parts.append(f"Viewer triangle limit: {mesh['viewer_triangle_limit']}")
+    parts.append(f"source: {text(mesh['source'])}")
+    return f"<p class=\"muted\">{'; '.join(parts)}</p>"
 
 
 def full_json_section(report: dict[str, Any]) -> str:
@@ -296,31 +307,38 @@ def resolve_path(raw_path: str | None, report_dir: Path) -> Path | None:
 
 def mesh_preview(label: str, path: Path) -> dict[str, Any]:
     mesh = read_surface(path)
-    max_triangles = max_viewer_triangles()
-    if mesh.n_cells > max_triangles:
-        reduction = 1.0 - (max_triangles / float(mesh.n_cells))
+    original_triangles = int(mesh.n_cells)
+    viewer_triangle_limit = viewer_triangle_limit_from_env()
+    if viewer_triangle_limit and mesh.n_cells > viewer_triangle_limit:
+        reduction = 1.0 - (viewer_triangle_limit / float(mesh.n_cells))
         mesh = mesh.decimate_pro(reduction, preserve_topology=False).triangulate().clean()
     faces = triangle_faces(mesh)
     polys = np.column_stack((np.full((faces.shape[0], 1), 3, dtype=np.uint32), faces)).ravel()
     points = np.asarray(mesh.points, dtype=np.float32)
+    displayed_triangles = int(faces.shape[0])
     return {
         "label": label,
         "source": str(path),
         "points": np.round(points, 6).tolist(),
         "polys": polys.astype(np.uint32).tolist(),
-        "triangles": int(faces.shape[0]),
+        "triangles": displayed_triangles,
+        "original_triangles": original_triangles,
+        "full_resolution": displayed_triangles == original_triangles,
+        "downsampled": displayed_triangles != original_triangles,
+        "viewer_triangle_limit": viewer_triangle_limit,
         "points_count": int(points.shape[0]),
     }
 
 
-def max_viewer_triangles() -> int:
+def viewer_triangle_limit_from_env() -> int | None:
     raw = os.environ.get("CAD_SURFACE_MESHER_VIEWER_TRIANGLES")
     if not raw:
-        return DEFAULT_MAX_VIEWER_TRIANGLES
+        return None
     try:
-        return max(1, int(raw))
+        value = int(raw)
     except ValueError:
-        return DEFAULT_MAX_VIEWER_TRIANGLES
+        return None
+    return value if value > 0 else None
 
 
 def vtk_js_source() -> str:
