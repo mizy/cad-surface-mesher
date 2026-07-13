@@ -39,11 +39,15 @@ def write_vtp(
     points: np.ndarray,
     faces: np.ndarray,
     cell_data: dict[str, np.ndarray] | None = None,
+    *,
+    point_data: dict[str, np.ndarray] | None = None,
 ) -> None:
     packed = np.empty((faces.shape[0], 4), dtype=np.int64)
     packed[:, 0] = 3
     packed[:, 1:] = faces
     mesh = pv.PolyData(points, packed.ravel())
+    for name, values in (point_data or {}).items():
+        mesh.point_data[name] = values
     for name, values in (cell_data or {}).items():
         mesh.cell_data[name] = values
     mesh.save(path)

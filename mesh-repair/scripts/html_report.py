@@ -3,18 +3,12 @@ from __future__ import annotations
 import base64
 import json
 import mimetypes
-import os
-import urllib.request
 from html import escape
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
-from mesh_io import read_surface, triangle_faces
-
-
-VTK_JS_URL = "https://unpkg.com/vtk.js@latest/vtk.js"
+from html_mesh_preview import DEFAULT_VIEWER_TRIANGLE_LIMIT, mesh_preview, preview_specs  # noqa: F401
+from html_mesh_preview import mesh_previews, resolve_path, vtk_js_source, vtk_script_section
 
 
 def write_html_report(report: dict[str, Any], path: Path, title: str) -> None:
@@ -25,10 +19,13 @@ def render_html(report: dict[str, Any], title: str, report_dir: Path) -> str:
     vtk_js = vtk_js_source()
     preview_meshes = mesh_previews(report, report_dir)
     body = [
-        f"<h1>{text(title)}</h1>",
+        hero_section(title, report),
         summary_section(report),
         diagnostics_section(report),
+        contract_section(report),
+        stages_section(report),
         viewer_section(preview_meshes),
+        watertight_artifact_section(report, report_dir),
         trace_section(report),
         change_section(report),
         defect_section(report),
@@ -55,10 +52,25 @@ def render_html(report: dict[str, Any], title: str, report_dir: Path) -> str:
     ])
 
 
+def hero_section(title: str, report: dict[str, Any]) -> str:
+    status = report.get("decision", {}).get("status")
+    label = f'<span class="status status-{text(str(status or "visual"))}">{text(str(status or "visual only"))}</span>'
+    return "\n".join([
+        '<header class="report-hero">',
+        f"<h1>{text(title)}</h1>",
+        f"{label}",
+        "</header>",
+    ])
+
+
 def summary_section(report: dict[str, Any]) -> str:
     rows = []
+    if "decision" in report:
+        rows.append(("Decision", report["decision"]))
     if "input" in report:
         rows.append(("Input", report["input"]))
+    if "input_truth" in report:
+        rows.append(("Input Truth", report["input_truth"]))
     if "target" in report:
         rows.append(("Target", report["target"]))
     if "output_contract" in report:
@@ -71,8 +83,7 @@ def summary_section(report: dict[str, Any]) -> str:
 
 
 def diagnostics_section(report: dict[str, Any]) -> str:
-    rows = []
-    for key in [
+    return section_from_keys(report, "Diagnostics", [
         "parameters",
         "limitations",
         "group_filter",
@@ -82,12 +93,65 @@ def diagnostics_section(report: dict[str, Any]) -> str:
         "refinement_iterations",
         "comparisons",
         "diagnostics",
-    ]:
-        if key in report:
-            rows.append((key, report[key]))
+    ])
+
+
+def contract_section(report: dict[str, Any]) -> str:
+    return section_from_keys(report, "Source-Preserving Contract", [
+        "inventory_before",
+        "deterministic_passes",
+        "unresolved_policy_packet",
+        "policy_decisions",
+        "inventory_after",
+        "ignored_outputs",
+        "unhandled_items",
+    ])
+
+
+def section_from_keys(report: dict[str, Any], title: str, keys: list[str]) -> str:
+    rows = [(key, report[key]) for key in keys if key in report]
     if not rows:
         return ""
-    return section("Diagnostics", kv_table(rows))
+    return section(title, kv_table(rows))
+
+
+def stages_section(report: dict[str, Any]) -> str:
+    stages = report.get("stages")
+    if not isinstance(stages, dict) or not stages:
+        return ""
+    rows = []
+    for name, raw_details in stages.items():
+        details = raw_details if isinstance(raw_details, dict) else {}
+        metrics = details.get("metrics") if isinstance(details.get("metrics"), dict) else {}
+        topology = metrics.get("topology") if isinstance(metrics.get("topology"), dict) else {}
+        components = topology.get("components") if isinstance(topology.get("components"), dict) else {}
+        rows.append({
+            "stage": name,
+            "status": details.get("status"),
+            "role": details.get("role"),
+            "source": details.get("source"),
+            "triangles": metrics.get("triangles"),
+            "boundary_edges": topology.get("boundary_edges"),
+            "non_manifold_edges": topology.get("non_manifold_edges"),
+            "non_manifold_vertices": topology.get("non_manifold_vertices"),
+            "components": components.get("count"),
+            "accepted_final_geometry": details.get("accepted_final_geometry"),
+            "path": details.get("path"),
+        })
+    columns = [
+        "stage",
+        "status",
+        "role",
+        "source",
+        "triangles",
+        "boundary_edges",
+        "non_manifold_edges",
+        "non_manifold_vertices",
+        "components",
+        "accepted_final_geometry",
+        "path",
+    ]
+    return section("Stages", row_table(rows, columns))
 
 
 def trace_section(report: dict[str, Any]) -> str:
@@ -104,6 +168,7 @@ def trace_section(report: dict[str, Any]) -> str:
         "points",
         "boundary_edges",
         "non_manifold_edges",
+        "non_manifold_vertices",
         "components",
         "output",
     ]
@@ -162,51 +227,92 @@ def visual_items(report: dict[str, Any]) -> list[tuple[str, str]]:
 
 
 def viewer_section(preview_meshes: list[dict[str, Any]]) -> str:
-    if len(preview_meshes) < 2:
+    if not preview_meshes:
         return ""
     cards = []
     for index, mesh in enumerate(preview_meshes):
-        cards.append(
-            "\n".join([
-                "<div>",
-                f"<h3>{text(mesh['label'])}</h3>",
-                f'<div class="vtk-viewer" id="vtk-viewer-{index}"></div>',
-                viewer_mesh_caption(mesh),
-                "</div>",
-            ])
-        )
-    return section("3D Before / After", '<div class="viewer-grid">' + "\n".join(cards) + "</div>")
+        cards.append("\n".join([
+            "<div>",
+            f"<h3>{text(mesh['label'])}</h3>",
+            f'<div class="vtk-viewer" id="vtk-viewer-{index}"></div>',
+            proxy_weight_legend(mesh),
+            viewer_mesh_caption(mesh),
+            "</div>",
+        ]))
+    return section("3D Mesh Evidence", '<div class="viewer-grid">' + "\n".join(cards) + "</div>")
 
 
 def viewer_mesh_caption(mesh: dict[str, Any]) -> str:
     parts = [
-        f"Displayed triangles: {mesh['triangles']}",
-        f"Original triangles: {mesh['original_triangles']}",
-        f"Full resolution: {str(mesh['full_resolution']).lower()}",
+        f"{mesh['triangles']} triangles",
+        "full resolution" if mesh["full_resolution"] else f"downsampled from {mesh['original_triangles']}",
     ]
     if mesh.get("viewer_triangle_limit"):
-        parts.append(f"Viewer triangle limit: {mesh['viewer_triangle_limit']}")
+        parts.append(f"viewer triangle limit: {mesh['viewer_triangle_limit']}")
+    if mesh.get("proxy_weights"):
+        parts.append("source/proxy blend heatmap from proxy_weight cell data")
+    if mesh.get("issue_values"):
+        parts.append("red cells are adjacent to a recorded watertightness defect")
     parts.append(f"source: {text(mesh['source'])}")
     return f"<p class=\"muted\">{'; '.join(parts)}</p>"
+
+
+def proxy_weight_legend(mesh: dict[str, Any]) -> str:
+    if mesh.get("issue_values"):
+        return "\n".join([
+            '<div class="proxy-weight-legend" aria-label="watertight issue legend">',
+            '<span>Watertight issue adjacency</span>',
+            '<div class="proxy-weight-labels"><span style="color:#8c9eb3">gray clean face</span><span style="color:#f5421f">red issue-adjacent face</span></div>',
+            "</div>",
+        ])
+    if not mesh.get("proxy_weights"):
+        return ""
+    return "\n".join([
+        '<div class="proxy-weight-legend" aria-label="source proxy blend weight legend">',
+        '<span>Source/proxy blend weight</span>',
+        '<div class="proxy-weight-ramp"></div>',
+        '<div class="proxy-weight-labels"><span>0 source</span><span>0.5 seam</span><span>1 proxy</span></div>',
+        "</div>",
+    ])
+
+
+def watertight_artifact_section(report: dict[str, Any], report_dir: Path) -> str:
+    artifacts = report.get("outputs", {}).get("watertight_issue_artifacts", [])
+    if not artifacts:
+        return ""
+    rows = []
+    for artifact in artifacts:
+        raw_path = artifact.get("path")
+        resolved = resolve_path(raw_path, report_dir)
+        if resolved and resolved.exists():
+            try:
+                href = resolved.resolve().relative_to(report_dir.resolve()).as_posix()
+            except ValueError:
+                href = resolved.resolve().as_uri()
+            path_html = f'<a href="{text(href)}">{text(resolved.name)}</a>'
+        else:
+            path_html = text(raw_path or "missing")
+        rows.append(
+            "<tr>"
+            f"<td>{text(str(artifact.get('stage', '')))}</td>"
+            f"<td>{text(str(artifact.get('kind', '')))}</td>"
+            f"<td>{value_html(artifact.get('count'))}</td>"
+            f"<td>{value_html(artifact.get('regions'))}</td>"
+            f"<td>{text(str(artifact.get('representation', '')))}</td>"
+            f"<td>{path_html}</td>"
+            "</tr>"
+        )
+    table = (
+        "<table><thead><tr><th>Stage</th><th>Issue/artifact</th><th>Count</th>"
+        "<th>Regions</th><th>Representation</th><th>Full-resolution VTP</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table>"
+    )
+    return section("Watertight Issue VTP Artifacts", table)
 
 
 def full_json_section(report: dict[str, Any]) -> str:
     content = text(json.dumps(report, indent=2, ensure_ascii=False))
     return section("Full JSON", f"<details><summary>Open full machine-readable report</summary><pre>{content}</pre></details>")
-
-
-def vtk_script_section(vtk_js: str, preview_meshes: list[dict[str, Any]]) -> str:
-    if len(preview_meshes) < 2:
-        return ""
-    return "\n".join([
-        "<script>",
-        script_source(vtk_js),
-        "</script>",
-        f'<script type="application/json" id="mesh-preview-data">{script_json(preview_meshes)}</script>',
-        "<script>",
-        viewer_js(),
-        "</script>",
-    ])
 
 
 def section(title: str, content: str) -> str:
@@ -265,147 +371,6 @@ def image_src(raw_path: str, report_dir: Path) -> str:
     return f"data:{mime_type};base64,{encoded}"
 
 
-def mesh_previews(report: dict[str, Any], report_dir: Path) -> list[dict[str, Any]]:
-    specs = preview_specs(report)
-    previews = []
-    for label, raw_path in specs:
-        path = resolve_path(raw_path, report_dir)
-        if path and path.exists():
-            try:
-                previews.append(mesh_preview(label, path))
-            except Exception as exc:
-                previews.append({"label": label, "source": str(path), "error": str(exc), "points": [], "polys": []})
-    return [preview for preview in previews if preview.get("points") and preview.get("polys")]
-
-
-def preview_specs(report: dict[str, Any]) -> list[tuple[str, str | None]]:
-    outputs = report.get("outputs", {})
-    if "stage2_watertight_surface_vtp" in outputs:
-        return [
-            ("Before: dirty input mesh", report.get("input", {}).get("path")),
-            ("After: watertight mesh", outputs.get("stage2_watertight_surface_vtp")),
-        ]
-    if "adaptive_refined_source_vtp" in outputs:
-        return [
-            ("Before: source exterior candidate", report.get("input")),
-            ("After: adaptive refined source", outputs.get("adaptive_refined_source_vtp")),
-        ]
-    return []
-
-
-def resolve_path(raw_path: str | None, report_dir: Path) -> Path | None:
-    if not raw_path:
-        return None
-    path = Path(raw_path)
-    if path.is_absolute():
-        return path
-    if path.exists():
-        return path
-    candidate = report_dir / path
-    return candidate if candidate.exists() else path
-
-
-def mesh_preview(label: str, path: Path) -> dict[str, Any]:
-    mesh = read_surface(path)
-    original_triangles = int(mesh.n_cells)
-    viewer_triangle_limit = viewer_triangle_limit_from_env()
-    if viewer_triangle_limit and mesh.n_cells > viewer_triangle_limit:
-        reduction = 1.0 - (viewer_triangle_limit / float(mesh.n_cells))
-        mesh = mesh.decimate_pro(reduction, preserve_topology=False).triangulate().clean()
-    faces = triangle_faces(mesh)
-    polys = np.column_stack((np.full((faces.shape[0], 1), 3, dtype=np.uint32), faces)).ravel()
-    points = np.asarray(mesh.points, dtype=np.float32)
-    displayed_triangles = int(faces.shape[0])
-    return {
-        "label": label,
-        "source": str(path),
-        "points": np.round(points, 6).tolist(),
-        "polys": polys.astype(np.uint32).tolist(),
-        "triangles": displayed_triangles,
-        "original_triangles": original_triangles,
-        "full_resolution": displayed_triangles == original_triangles,
-        "downsampled": displayed_triangles != original_triangles,
-        "viewer_triangle_limit": viewer_triangle_limit,
-        "points_count": int(points.shape[0]),
-    }
-
-
-def viewer_triangle_limit_from_env() -> int | None:
-    raw = os.environ.get("CAD_SURFACE_MESHER_VIEWER_TRIANGLES")
-    if not raw:
-        return None
-    try:
-        value = int(raw)
-    except ValueError:
-        return None
-    return value if value > 0 else None
-
-
-def vtk_js_source() -> str:
-    env_path = os.environ.get("VTK_JS_PATH")
-    if env_path and Path(env_path).exists():
-        return Path(env_path).read_text(encoding="utf-8")
-    cache_path = Path.home() / ".cache" / "cad-surface-mesher" / "vtk.js"
-    if cache_path.exists():
-        return cache_path.read_text(encoding="utf-8")
-    try:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        with urllib.request.urlopen(VTK_JS_URL, timeout=30) as response:
-            source = response.read().decode("utf-8")
-        cache_path.write_text(source, encoding="utf-8")
-        return source
-    except Exception as exc:
-        return f"console.error({json.dumps('vtk.js unavailable: ' + str(exc))});"
-
-
-def script_source(source: str) -> str:
-    return source.replace("</script", "<\\/script")
-
-
-def script_json(value: Any) -> str:
-    data = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
-    return data.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
-
-
-def viewer_js() -> str:
-    return """
-(function () {
-  const raw = document.getElementById('mesh-preview-data');
-  if (!raw || typeof vtk === 'undefined') {
-    document.querySelectorAll('.vtk-viewer').forEach((container) => {
-      container.textContent = 'vtk.js failed to load';
-    });
-    return;
-  }
-  const meshes = JSON.parse(raw.textContent);
-  const vtkGenericRenderWindow = vtk.Rendering.Misc.vtkGenericRenderWindow;
-  const vtkActor = vtk.Rendering.Core.vtkActor;
-  const vtkMapper = vtk.Rendering.Core.vtkMapper;
-  const vtkPolyData = vtk.Common.DataModel.vtkPolyData;
-
-  meshes.forEach((mesh, index) => {
-    const container = document.getElementById(`vtk-viewer-${index}`);
-    if (!container) return;
-    const generic = vtkGenericRenderWindow.newInstance({ background: [0.98, 0.99, 1.0] });
-    generic.setContainer(container);
-    generic.resize();
-    const polyData = vtkPolyData.newInstance();
-    polyData.getPoints().setData(Float32Array.from(mesh.points.flat()), 3);
-    polyData.getPolys().setData(Uint32Array.from(mesh.polys));
-    const mapper = vtkMapper.newInstance();
-    mapper.setInputData(polyData);
-    const actor = vtkActor.newInstance();
-    actor.setMapper(mapper);
-    actor.getProperty().setColor(index === 0 ? 0.55 : 0.2, index === 0 ? 0.62 : 0.7, index === 0 ? 0.7 : 0.35);
-    actor.getProperty().setOpacity(1.0);
-    generic.getRenderer().addActor(actor);
-    generic.getRenderer().resetCamera();
-    generic.getRenderWindow().render();
-  });
-})();
-"""
-
-
 def text(value: str) -> str:
     return escape(value, quote=True)
 
@@ -413,20 +378,61 @@ def text(value: str) -> str:
 def css() -> str:
     return """
 body {
-  color: #172026;
-  background: #f6f8fa;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #e8edf2;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(43, 129, 140, 0.32), transparent 30%),
+    linear-gradient(135deg, rgba(255,255,255,0.035) 25%, transparent 25%) 0 0 / 18px 18px,
+    #101417;
+  font-family: "Aptos", "Avenir Next", "Helvetica Neue", sans-serif;
   line-height: 1.45;
   margin: 0;
-  padding: 28px;
+  padding: 30px;
 }
-h1, h2 { color: #111827; }
+h1, h2, h3 {
+  color: #f8fafc;
+  font-family: "DIN Alternate", "Bahnschrift", "Aptos Display", sans-serif;
+  letter-spacing: 0;
+}
+h1 {
+  font-size: clamp(34px, 5vw, 72px);
+  line-height: 0.95;
+  margin: 0;
+  max-width: 920px;
+}
+h2 {
+  color: #a7d8cf;
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 14px;
+  text-transform: uppercase;
+}
+h3 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.report-hero {
+  align-items: end;
+  border-bottom: 1px solid rgba(167, 216, 207, 0.28);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+}
+.status {
+  border: 1px solid rgba(167, 216, 207, 0.42);
+  color: #a7d8cf;
+  font-family: "SF Mono", "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 7px 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status-accepted { color: #95e6b8; }
+.status-rejected { color: #ffb38a; }
 section {
-  background: #fff;
-  border: 1px solid #d8dee4;
-  border-radius: 8px;
-  margin: 18px 0;
-  padding: 18px;
+  margin: 26px 0;
 }
 table {
   border-collapse: collapse;
@@ -438,7 +444,8 @@ th, td {
   text-align: left;
   vertical-align: top;
 }
-th { background: #f1f5f9; width: 220px; }
+th { background: #f1f5f9; color: #1f2937; width: 220px; }
+a { color: #7dd3fc; }
 pre {
   background: #0f172a;
   border-radius: 6px;
@@ -453,30 +460,62 @@ pre {
 .muted { color: #667085; }
 .image-grid {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 .viewer-grid {
   display: grid;
-  gap: 14px;
+  gap: 18px;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
 }
 .vtk-viewer {
-  background: #e5e7eb;
-  border: 1px solid #d8dee4;
+  background: #0b0f12;
+  border: 1px solid rgba(167, 216, 207, 0.32);
   height: 420px;
   min-width: 0;
 }
 figure { margin: 0; }
 img {
   background: #111827;
-  border: 1px solid #d8dee4;
+  border: 1px solid rgba(167, 216, 207, 0.22);
   max-width: 100%;
 }
 figcaption {
-  color: #475467;
+  color: #aab7bd;
   font-size: 12px;
   margin-top: 4px;
   word-break: break-all;
+}
+.viewer-grid > div {
+  border-top: 2px solid rgba(255, 179, 138, 0.64);
+  padding-top: 10px;
+}
+.viewer-grid p {
+  color: #aab7bd;
+  font-family: "SF Mono", "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
+.proxy-weight-legend {
+  color: #dce7ec;
+  font-family: "SF Mono", "IBM Plex Mono", monospace;
+  font-size: 12px;
+  margin: 8px 0;
+}
+.proxy-weight-ramp {
+  background: linear-gradient(90deg, #3894d1 0%, #f2b32e 50%, #e13d29 100%);
+  height: 10px;
+  margin: 6px 0 4px;
+}
+.proxy-weight-labels {
+  display: flex;
+  justify-content: space-between;
+}
+@media (max-width: 720px) {
+  body { padding: 18px; }
+  .report-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .viewer-grid { grid-template-columns: minmax(0, 1fr); }
 }
 """

@@ -24,12 +24,12 @@ class ViewSpec:
 
 
 VIEWS = [
-    ViewSpec("front_minus_x", (1, 2), (1.0, 0.0, 0.0)),
-    ViewSpec("rear_plus_x", (1, 2), (-1.0, 0.0, 0.0)),
-    ViewSpec("left_minus_y", (0, 2), (0.0, 1.0, 0.0)),
-    ViewSpec("right_plus_y", (0, 2), (0.0, -1.0, 0.0)),
-    ViewSpec("top_plus_z", (0, 1), (0.0, 0.0, -1.0)),
-    ViewSpec("bottom_minus_z", (0, 1), (0.0, 0.0, 1.0)),
+    ViewSpec("minus_x", (1, 2), (1.0, 0.0, 0.0)),
+    ViewSpec("plus_x", (1, 2), (-1.0, 0.0, 0.0)),
+    ViewSpec("minus_y", (0, 2), (0.0, 1.0, 0.0)),
+    ViewSpec("plus_y", (0, 2), (0.0, -1.0, 0.0)),
+    ViewSpec("plus_z", (0, 1), (0.0, 0.0, -1.0)),
+    ViewSpec("minus_z", (0, 1), (0.0, 0.0, 1.0)),
 ]
 
 
@@ -88,7 +88,7 @@ def critical_pixels(
     include_silhouette: bool,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     grad = np.zeros(depth.shape, dtype=np.float64)
-    deltas = []
+    deltas: list[np.ndarray] = []
     add_gradient(depth[:, 1:] - depth[:, :-1], valid[:, 1:] & valid[:, :-1], grad[:, 1:], grad[:, :-1], deltas)
     add_gradient(depth[1:, :] - depth[:-1, :], valid[1:, :] & valid[:-1, :], grad[1:, :], grad[:-1, :], deltas)
     threshold = float(np.percentile(np.concatenate(deltas), percentile)) if deltas else np.inf

@@ -39,18 +39,21 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def build_report(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> dict[str, Any]:
-    stages = {
-        "original_input": two_stage["stages"]["original"],
-        "stage1_exterior_candidate": two_stage["stages"]["stage1_exterior_candidate"],
-        "adaptive_refined_source_diagnostic": adaptive["refined_metrics"],
-        "stage2_watertight_remesh": two_stage["stages"]["stage2_watertight_remesh"],
+    stages = dict(two_stage["stages"])
+    stages["adaptive_refined_source_diagnostic"] = {
+        "path": adaptive.get("outputs", {}).get("adaptive_refined_source_vtp"),
+        "source": adaptive.get("input"),
+        "metrics": adaptive["refined_metrics"],
+        "accepted_final_geometry": False,
     }
     return {
+        "decision": two_stage["decision"],
         "input": two_stage["input"],
+        "input_truth": two_stage.get("input_truth"),
         "target": two_stage.get("target"),
         "output_contract": two_stage["output_contract"],
-        "method": "group_visibility_filter_to_exterior_candidate_then_adaptive_diagnostics_and_watertight_remesh",
-        "workflow_decision": workflow_decision(),
+        "method": "visibility_source_truth_to_repaired_closure_topology_then_exact_source_projection",
+        "workflow_decision": workflow_decision(two_stage),
         "parameters": {
             "two_stage_watertight": two_stage.get("parameters", {}),
             "adaptive_depth_refinement": adaptive.get("parameters", {}),
@@ -62,6 +65,11 @@ def build_report(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> dict[st
         "refinement_iterations": adaptive.get("refinement_iterations"),
         "comparisons": two_stage.get("comparisons"),
         "stages": stages,
+        "inventory_before": two_stage.get("inventory_before", {}),
+        "deterministic_passes": two_stage.get("deterministic_passes", []),
+        "unresolved_policy_packet": two_stage.get("unresolved_policy_packet", {"items": []}),
+        "policy_decisions": two_stage.get("policy_decisions", []),
+        "inventory_after": two_stage.get("inventory_after", {}),
         "repair_report": {
             "geometry_to_mesh_trace": workflow_trace(two_stage, adaptive),
             "change_summary": workflow_changes(two_stage, adaptive),
@@ -70,17 +78,21 @@ def build_report(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> dict[st
         },
         "gates": two_stage.get("gates", {}),
         "outputs": workflow_outputs(two_stage, adaptive),
+        "ignored_outputs": workflow_ignored_outputs(two_stage, adaptive),
+        "unhandled_items": two_stage.get("unhandled_items", []),
         "source_reports": {},
     }
 
 
-def workflow_decision() -> dict[str, Any]:
+def workflow_decision(two_stage: dict[str, Any]) -> dict[str, Any]:
     return {
         "primary_report": "workflow_report.html",
-        "final_output_path": "stage2_watertight_surface_vtp",
+        "decision_status": two_stage.get("decision", {}).get("status"),
+        "final_output_path": two_stage.get("decision", {}).get("final_output_path"),
+        "closure_proxy_role": "watertight_connectivity_template_only",
         "adaptive_refinement_role": "diagnostic_source_refinement_branch",
         "adaptive_refinement_used_as_final_watertight_input": False,
-        "reason": "current prototype validates local depth-driven sizing separately; final closure still uses voxel remesh on Stage 1 exterior candidate",
+        "reason": "adaptive refinement is reported for source-detail diagnostics and is not consumed by the accepted final output",
     }
 
 
@@ -113,7 +125,8 @@ def workflow_changes(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> dic
     changes["refined"] = adaptive["change_report"]["change_summary"]
     changes["workflow_note"] = {
         "adaptive_refinement_consumed_by_final_mesh": False,
-        "final_watertight_method": "voxel_fill_plus_marching_cubes_on_stage1_exterior_candidate",
+        "closure_proxy_method": "voxel_fill_plus_marching_cubes_on_source_preserving_candidate",
+        "accepted_final_output": two_stage.get("outputs", {}).get("accepted_mesh_vtp"),
     }
     return changes
 
@@ -121,7 +134,7 @@ def workflow_changes(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> dic
 def workflow_defects(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> dict[str, Any]:
     defects = dict(two_stage["repair_report"]["defect_matrix"])
     defects["adaptive_refined_source_diagnostic"] = adaptive["change_report"]["defect_matrix"]["adaptive_refined_source"]
-    defects["final_stage2_watertight_topology"] = defects.get("stage2_after_watertight_remesh")
+    defects["closure_proxy_topology"] = defects.get("closure_proxy_diagnostic")
     return defects
 
 
@@ -142,11 +155,35 @@ def workflow_outputs(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> dic
     adaptive_outputs = adaptive.get("outputs", {})
     return {
         "stage1_exterior_candidate_vtp": two_outputs.get("stage1_exterior_candidate_vtp"),
+        "source_preserving_candidate_vtp": two_outputs.get("source_preserving_candidate_vtp"),
+        "source_projected_watertight_candidate_vtp": two_outputs.get(
+            "source_projected_watertight_candidate_vtp"
+        ),
+        "accepted_mesh_vtp": two_outputs.get("accepted_mesh_vtp"),
+        "rejected_candidate_vtp": two_outputs.get("rejected_candidate_vtp"),
+        "closure_proxy_vtp": two_outputs.get("closure_proxy_vtp"),
         "adaptive_refined_source_vtp": adaptive_outputs.get("adaptive_refined_source_vtp"),
         "refinement_field_vtp": adaptive_outputs.get("refinement_field_vtp"),
-        "stage2_watertight_surface_vtp": two_outputs.get("stage2_watertight_surface_vtp"),
+        "ai_policy_packet_json": two_outputs.get("ai_policy_packet_json"),
         "previews": two_outputs.get("previews", []),
     }
+
+
+def workflow_ignored_outputs(two_stage: dict[str, Any], adaptive: dict[str, Any]) -> list[dict[str, Any]]:
+    ignored = list(two_stage.get("ignored_outputs", []))
+    adaptive_outputs = adaptive.get("outputs", {})
+    for key in ("adaptive_refined_source_vtp", "refinement_field_vtp"):
+        path = adaptive_outputs.get(key)
+        if path:
+            ignored.append(
+                {
+                    "path": path,
+                    "kind": "adaptive_diagnostic",
+                    "reason": "adaptive refinement is not consumed by the final watertight repair output",
+                    "safe_for_acceptance": False,
+                }
+            )
+    return ignored
 
 
 if __name__ == "__main__":

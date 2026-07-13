@@ -9,6 +9,9 @@
 ## Mesh Repair
 
 - Use `cad-surface-mesher` reports as the front door for deciding what to repair.
+- Evolve fixed repair pipelines into an AI-directed 3D engineering workflow whose agent chooses
+  target-specific playbooks from reusable observation, mutation, transaction, and validation
+  operations. See [AI-Directed 3D Mesh Engineering Plan](ai-directed-3d-mesh-agent-plan.md).
 - Detect open boundaries, non-manifold edges, duplicated vertices, zero-area faces, self intersections, inverted normals, and disconnected shells.
 - Produce a repair plan before mutating geometry.
 - Repair common surface issues with measurable before/after diagnostics.
