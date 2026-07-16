@@ -1,9 +1,46 @@
 ---
 name: cad-surface-mesher
-description: Build and validate target-specific CAD surface meshes from CAD or mesh inputs. Use when Codex needs to convert CAD or mesh inputs to triangle-only surface meshes, remove non-target internal or hidden parts with group-level show/hide tests, prune AABB-contained internals, extract only exterior wall surfaces, seal target-specific gaps, handle opening policy, generate target-driven visual inspection screenshots, audit watertightness/non-manifold topology/triangle quality, or produce a surface mesh quality report for CFD/CAE preprocessing.
+description: Build, repair, and validate target-specific CAD surfaces or surface meshes from CAD or mesh inputs. Use when Codex needs to close an open STEP/BREP into valid watertight Solids with FreeCAD/OpenCASCADE, distinguish physical CAD openings from degenerated parameter seams, perform CAD-domain sewing or local patching before tessellation, validate STEP/BREP serialization, convert CAD or mesh inputs to triangle-only surfaces, extract exterior walls, repair watertight meshes, generate target-driven visual evidence, or report CFD/CAE surface quality.
 ---
 
 # CAD Surface Mesher
+
+## Skill entrypoint and Agent boundary
+
+This file is the AI orchestration entrypoint. When this Skill is selected, the active AI agent must
+read it, inspect deterministic observation artifacts, make semantic decisions, and call geometry
+tools. Do not expose or invent an `--agent-mode`, `--codex-binary`, or other model-execution option
+in a mesh-watertight-repair CLI. The command-line tools are deterministic workers; the AI agent is the caller.
+
+All commands below assume the working directory is this skill directory (`.agents/skills/cad-surface-mesher/`).
+
+For the combined dirty-STL workflow:
+
+1. Invoke the mesh-watertight-repair two-stage worker for one deterministic geometry round. It
+   creates visibility evidence, the source-preserving shell, flood-signed TSDF, closure proxy,
+   source-projected candidate, and validator artifacts. It must not launch another model.
+2. Read `two_stage_report.json`, `ai_policy_packet.json`, registered views, and failed gates.
+3. Decide exterior/internal/opening semantics in the agent turn. Cite stable component, region, and
+   view IDs with their packet fingerprints; never cite arbitrary point coordinates.
+4. Supply opening decisions through `--policy-decisions`, or invoke one matching deterministic
+   region transaction for a local defect. Run the next round in a fresh directory, then re-audit.
+5. Accept only when the independent validator populates `outputs.accepted_mesh_vtp`.
+   `closure_proxy.vtp` is never an accepted output.
+
+The internal deterministic worker invocation is:
+
+```bash
+python ../mesh-watertight-repair/scripts/two_stage_watertight_remesh.py INPUT \
+  --output-dir OUTPUT \
+  --visibility-grid 720 \
+  --outside-flood-grid 192 \
+  --sealed-exterior-grid 192 \
+  --voxel-pitch-bbox-divisor 280 \
+  --sdf-band-voxels 6 \
+  --max-sdf-memory-gb 4
+```
+
+The Skill agent owns the semantic loop; the worker owns deterministic geometry and validation.
 
 Create a target-specific CAD surface mesh, not a faithful full assembly mesh. The common default target is an exterior flow or analysis skin for CAX/CAE preprocessing with explicit visibility, visual, and topology evidence. Vehicles are only one target family.
 
@@ -28,6 +65,33 @@ Supported pipeline meanings:
 - `mesh -> watertight_cad`: reverse surface fitting from mesh; this is a separate reconstruction mode and must report approximation loss. Do not present it as preserving original CAD.
 
 Every report must state `input_kind`, `output_kind`, output files, and whether the repair happened in CAD domain, mesh domain, or reverse-fitting domain.
+
+## CAD/B-Rep Watertight Closure
+
+For `cad -> watertight_cad`, or whenever the user asks to close, heal, or make a STEP/BREP
+watertight, read [references/cad-brep-watertight-closure.md](references/cad-brep-watertight-closure.md)
+before repairing geometry.
+
+Keep original CAD faces as geometry truth. Do not tessellate first when conservative sewing and a
+small set of local CAD patches can produce closed Solids. In particular:
+
+1. Separate physical free edges from OCCT `Degenerated` parameter seams.
+2. Group and classify physical boundary wires before choosing caps, bridges, or curved patches.
+3. Repair only the owning shell and require a valid, closed, positive-volume Solid.
+4. Export both native BREP and interoperable STEP with explicit units and write precision.
+5. Re-import both serialized files and treat round-trip validation as part of the repair, not an
+   optional format check.
+
+Use the bundled validator for final CAD acceptance:
+
+```bash
+FreeCADCmd -c "exec(open('scripts/freecad_validate_watertight_cad.py').read())" --pass \
+  OUTPUT.step --pass --reference --pass OUTPUT.brep \
+  --pass --expected-solids --pass N --pass --report --pass OUTPUT.validation.json
+```
+
+Do not route a valid closed CAD result through `mesh-watertight-repair`; use that sibling Skill
+only after tessellation or when CAD-domain closure is infeasible.
 
 ## Target Policy
 
@@ -116,10 +180,10 @@ Depth-map driven refinement is a preferred mesh-only signal:
 
 The final output should be a single inspectable surface mesh with local refinement provenance showing which views and source faces caused each critical region to be refined.
 
-Use `mesh-repair/scripts/adaptive_depth_refine.py` to prototype this source-based refinement:
+Use `../mesh-watertight-repair/scripts/adaptive_depth_refine.py` to prototype this source-based refinement:
 
 ```bash
-python mesh-repair/scripts/adaptive_depth_refine.py /path/to/stage1_exterior_candidate.vtp \
+python ../mesh-watertight-repair/scripts/adaptive_depth_refine.py /path/to/stage1_exterior_candidate.vtp \
   --output-dir outputs/adaptive-depth-refine \
   --grid-size 900 \
   --gradient-percentile 98 \
@@ -131,10 +195,10 @@ python mesh-repair/scripts/adaptive_depth_refine.py /path/to/stage1_exterior_can
 
 The script writes a source-face refinement field, a conforming refined source mesh, per-view critical-pixel images, and a JSON report. It is a refinement-field and source-split prototype; watertight sealing remains a separate downstream step.
 
-Use `mesh-repair/scripts/two_stage_watertight_remesh.py` for the current local prototype when only mesh inputs are available:
+Use `../mesh-watertight-repair/scripts/two_stage_watertight_remesh.py` for the current local prototype when only mesh inputs are available:
 
 ```bash
-python mesh-repair/scripts/two_stage_watertight_remesh.py /path/to/assembly.vtp \
+python ../mesh-watertight-repair/scripts/two_stage_watertight_remesh.py /path/to/assembly.vtp \
   --group-source-gltf /path/to/scene.gltf \
   --target-name external-flow-skin \
   --remove-name-regex "internal|interior|hidden|cavity" \
@@ -150,7 +214,7 @@ Treat `watertight_topology_pass` as a narrow topology result only. Do not call t
 When both watertight repair and adaptive refinement diagnostics are run, produce one primary workflow report instead of handing users separate stage reports:
 
 ```bash
-python mesh-repair/scripts/workflow_report.py \
+python ../mesh-watertight-repair/scripts/workflow_report.py \
   --two-stage-report outputs/assembly-two-stage/two_stage_report.json \
   --adaptive-report outputs/assembly-adaptive/adaptive_refinement_report.json \
   --output-dir outputs/assembly-workflow-report
@@ -246,17 +310,18 @@ Required sections:
 
 Do not claim a gap, overlap, normal issue, CAS offset, or hole was repaired unless the report identifies the method, scope, before/after evidence, and output region/provenance.
 
-## Bundled Tool
+## Sibling Skills
 
-From the repository root, use `cad-tessellation/scripts/cad_tessellate.py` first when a CAD or mesh input must be converted to a triangle-only surface mesh:
+First use [`../surface-tessellation/`](../surface-tessellation/SKILL.md) to convert a CAD or mesh input to a triangle-only surface mesh:
 
 ```bash
-python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step --output-dir /tmp/cad-tessellation
+python ../surface-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step \
+  --output-dir /tmp/tessellation
 ```
 
-STEP, IGES, and BREP inputs use Gmsh/OCC. STL, OBJ, VTP, VTK, GLB, and GLTF inputs are read as existing meshes and converted with surface extraction plus triangulation.
+For watertight exterior-shell repair, delegate to [`../mesh-watertight-repair/`](../mesh-watertight-repair/SKILL.md).
 
-The tessellator writes `surface_mesh.vtp` plus `tessellation_report.json`. CAD outputs include `gmsh_surface_tag`, `gmsh_parent_volume_tag`, and `gmsh_element_tag` cell arrays. Mesh outputs include `source_triangle_index`. Treat all of these as import/output-session provenance, not persistent source CAD IDs.
+### Deterministic audit
 
 Use `scripts/audit_surface_mesh.py` for the current deterministic audit and screenshot generation:
 

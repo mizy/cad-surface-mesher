@@ -1,4 +1,5 @@
 gmsh
+libigl==2.6.2
 numpy
 pillow
 pyvista

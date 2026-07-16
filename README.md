@@ -2,16 +2,13 @@
 
 Personal toolkit for CAD-to-watertight-surface meshing, repair planning, tessellation, and fast vehicle geometry analysis.
 
-## Capabilities
+All logic lives inside **agent skills** under `.agents/skills/<skill-name>`. Each skill owns its `SKILL.md`, scripts, references, assets, and documentation.
 
-- `predict-vehicle-cd`: estimate vehicle drag coefficient from a mesh using normalized side-view geometry similarity and a packaged public reference library.
-- `cad-surface-mesher`: audit CAD-derived vehicle surface meshes, generate target-driven visual checks, and prepare target-specific surface repair decisions.
-- `mesh-repair`: planned automatic watertight surface mesh repair operations, quality diagnostics, and repair artifacts.
-- `cad-tessellation`: convert CAD or mesh files to triangle-only VTP surface meshes with JSON quality and provenance reports.
+## Skills
 
-## Current Usage
+### predict-vehicle-cd
 
-Run the migrated Cd predictor from its agent skill directory:
+Fast geometry-similarity Cd prediction from vehicle meshes.
 
 ```bash
 cd .agents/skills/predict-vehicle-cd
@@ -20,55 +17,57 @@ python scripts/vehicle_cd_similarity.py predict /path/to/car.vtp \
   --output-dir /tmp/cd_estimate
 ```
 
-Tessellate a CAD or mesh file into a downstream-consumable surface mesh:
+### mesh-watertight-repair
+
+Build, audit, and validate a geometry-driven watertight exterior shell from a mesh input.
 
 ```bash
-python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.step \
-  --output-dir /tmp/cad-tessellation \
+cd .agents/skills/mesh-watertight-repair
+python scripts/two_stage_watertight_remesh.py /path/to/input.vtp \
+  --output-dir /tmp/watertight-output
+```
+
+### surface-tessellation
+
+Convert CAD (STEP, IGES, BREP) or mesh (STL, OBJ, VTP, VTK, GLB, GLTF) into triangle-only VTP surface meshes.
+
+```bash
+cd .agents/skills/surface-tessellation
+python scripts/cad_tessellate.py tessellate /path/to/model.step \
+  --output-dir /tmp/tessellation \
   --mesh-size 0.05 \
   --angle-deg 18 \
   --chord 0.005
 ```
 
-Mesh inputs such as STL, OBJ, VTP, VTK, GLB, and GLTF are also accepted:
+### cad-surface-mesher
+
+Target-driven CAD surface mesh audit and visual QA.  
+Orchestrates `surface-tessellation` (CAD/mesh → VTP), `mesh-watertight-repair` (mesh → watertight shell), and its own `scripts/audit_surface_mesh.py` for deterministic audit and screenshot generation.
 
 ```bash
-python cad-tessellation/scripts/cad_tessellate.py tessellate /path/to/model.glb \
-  --output-dir /tmp/mesh-surface
+cd .agents/skills/cad-surface-mesher
+python scripts/audit_surface_mesh.py /path/to/car.vtp --output-dir /tmp/cad-surface-audit
 ```
 
-The tessellator writes `surface_mesh.vtp` and `tessellation_report.json`. CAD outputs store Gmsh cell provenance, while mesh outputs store post-triangulation `source_triangle_index`.
-
-Run the generated fixture smoke test:
-
-```bash
-python cad-tessellation/scripts/cad_tessellate.py smoke --output-dir /tmp/cad-tessellation-smoke
-```
-
-Agent skills live under:
-
-```text
-.agents/skills/<skill-name>
-```
-
-Each skill owns its `SKILL.md`, scripts, references, and bundled assets there.
+See each skill's `SKILL.md` for detailed documentation.
 
 ## Dependencies
-
-Install the local Python runtime dependencies with:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-Optional `trimesh` support improves GLB/GLTF loading.
+Optional `trimesh` improves GLB/GLTF loading.
 
 ## Repository Layout
 
 ```text
-.agents/skills/predict-vehicle-cd/   Cd prediction skill, scripts, and reference library
-.agents/skills/cad-surface-mesher/      CAD surface meshing skill, audit script, and visual QA prompts
-mesh-repair/                       Planned watertight surface mesh repair feature
-cad-tessellation/                  CAD tessellation CLI, generated fixture smoke test, and docs
-docs/                              Roadmap and cross-feature notes
+.agents/skills/predict-vehicle-cd/          Cd prediction (standalone)
+.agents/skills/mesh-watertight-repair/      Mesh → watertight exterior shell
+.agents/skills/surface-tessellation/        CAD/mesh → VTP surface mesh
+.agents/skills/cad-surface-mesher/          CAD surface meshing orchestrator
+  ├── SKILL.md                              AI agent entrypoint
+  ├── scripts/                              Shared scripts (audit, etc.)
+  └── docs/                                 Roadmap and cross-feature notes
 ```

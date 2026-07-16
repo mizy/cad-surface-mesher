@@ -2,12 +2,12 @@
 
 ## Core Goal: CAD Surface Meshing
 
-Keep each capability easy to find by responsibility:
+Keep each capability easy to find by responsibility and colocated inside its skill:
 
 - `predict-vehicle-cd`: fast geometry-similarity Cd prediction from vehicle meshes.
-- `cad-surface-mesher`: target-driven CAD surface mesh audit and visual QA.
-- `mesh-repair`: automatic watertight surface mesh repair and diagnostics.
-- `cad-tessellation`: CAD/mesh surface conversion and tessellation embedding.
+- `mesh-watertight-repair`: build a geometry-driven watertight exterior shell from a mesh input.
+- `surface-tessellation`: convert CAD or mesh inputs to triangle-only VTP surface meshes.
+- `cad-surface-mesher`: target-driven CAD surface mesh audit and visual QA; orchestrates sibling skills for tessellation and watertight repair.
 
 ## Boundaries
 
@@ -22,7 +22,7 @@ Keep each capability easy to find by responsibility:
 - A feature owns its assets, scripts, references, generated examples, and validation notes.
 - Shared utilities should be introduced only when at least two real features need them.
 - Keep generated caches, mesh outputs, screenshots, and temporary reports out of git unless they are intentional fixtures.
-- Agent skills live under `.agents/skills/<skill-name>` and own their scripts, references, assets, and `SKILL.md` there.
+- Agent skills live under `.agents/skills/<skill-name>` and own their scripts, references, assets, and `SKILL.md` there. No business logic lives outside `.agents/skills/`.
 
 ## Style
 
